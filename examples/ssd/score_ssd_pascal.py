@@ -77,9 +77,9 @@ caffe_root = os.getcwd()
 run_soon = True
 
 # The database file for training data. Created by data/VOC0712/create_data.sh
-train_data = "examples/VOC0712/VOC0712_trainval_lmdb"
+train_data = "/home/zhongyilin/Documents/caffe_wl/examples/VOC0712/VOC0712_trainval_lmdb"
 # The database file for testing data. Created by data/VOC0712/create_data.sh
-test_data = "examples/VOC0712/VOC0712_test_lmdb"
+test_data = "/home/zhongyilin/Documents/caffe_wl/examples/VOC0712/VOC0712_test_lmdb"
 # Specify the batch sampler.
 resize_width = 300
 resize_height = 300
@@ -241,7 +241,7 @@ snapshot_dir = "models/VGGNet/VOC0712/{}".format(job_name)
 # Directory which stores the job script and log file.
 job_dir = "jobs/VGGNet/VOC0712/{}_score".format(job_name)
 # Directory which stores the detection results.
-output_result_dir = "{}/data/VOCdevkit/results/VOC2007/{}_score/Main".format(os.environ['HOME'], job_name)
+output_result_dir = "{}/Documents/data/VOCdevkit/results/VOC2007/{}_score/Main".format(os.environ['HOME'], job_name)
 
 # model definition files.
 train_net_file = "{}/train.prototxt".format(save_dir)
@@ -321,7 +321,7 @@ max_ratio = 90
 step = int(math.floor((max_ratio - min_ratio) / (len(mbox_source_layers) - 2)))
 min_sizes = []
 max_sizes = []
-for ratio in xrange(min_ratio, max_ratio + 1, step):
+for ratio in range(min_ratio, max_ratio + 1, step):
   min_sizes.append(min_dim * ratio / 100.)
   max_sizes.append(min_dim * (ratio + step) / 100.)
 min_sizes = [min_dim * 10 / 100.] + min_sizes

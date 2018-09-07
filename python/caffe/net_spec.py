@@ -151,7 +151,8 @@ class Function(object):
             for top in self.tops:
                 layer.top.append(self._get_top_name(top, names, autonames))
         layer.name = self._get_name(names, autonames)
-
+        
+        print(self.params)
         for k, v in six.iteritems(self.params):
             # special case to handle generic *params
             if k.endswith('param'):
