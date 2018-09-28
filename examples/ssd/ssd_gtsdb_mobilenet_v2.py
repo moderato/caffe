@@ -227,10 +227,10 @@ use_batchnorm = False
 lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
-    base_lr = 0.00004
+    base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 0.000002
+    base_lr = 4e-6
 
 nms_top_k = 100
 top_k = 40
@@ -265,7 +265,7 @@ job_file = "{}/{}.sh".format(job_dir, model_name)
 # Stores the test image names and sizes. Created by data/GTSDB/create_list.sh
 name_size_file = "data/GTSDB/test_name_size.txt"
 # The pretrained model. We use MobileNet v2.
-pretrain_model = "models/MobileNetV2/mobilenet.caffemodel"
+pretrain_model = "models/MobileNetV2/mobilenet_v2.caffemodel"
 # Stores LabelMapItem.
 label_map_file = "data/GTSDB/labelmap_GTSDB.prototxt"
 
@@ -304,14 +304,14 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# conv5_5/sep ==> 19 x 19
-# conv6/sep ==> 10 x 10
+# conv5_3/sep ==> 19 x 19
+# conv6_4/sep ==> 10 x 10
 # ssd1_2 ==> 5 x 5
 # ssd2_2 ==> 3 x 3
 # ssd3_2 ==> 2 x 2
 # ssd4_2 ==> 1 x 1
 
-mbox_source_layers = ['conv5_5/sep', 'conv6/sep', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
+mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 mbox_source_layers = mbox_source_layers[:mbox_layer_num]
 
 # in percent %
@@ -385,17 +385,16 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
-    'weight_decay': 0.0005,
+    'weight_decay': 0.00001,
     'lr_policy': "multistep",
     'stepvalue': [6000, 18000, 30000],
     'gamma': 0.1,
-    'momentum': 0.9,
     'iter_size': iter_size,
     'max_iter': 30000,
     'snapshot': 18000,
     'display': 10,
     'average_loss': 10,
-    'type': "SGD",
+    'type': "RMSProp",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
@@ -484,7 +483,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV2Body(net, from_layer='data', ssd=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
 AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 

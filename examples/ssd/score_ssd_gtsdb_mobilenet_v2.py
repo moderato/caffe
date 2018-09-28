@@ -238,14 +238,14 @@ alpha = 1
 # Modify the job name if you want.
 job_name = "SSD_{}_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, mbox_layer_num, square, alpha)
 # The name of the model. Modify it if you want.
-model_name = "MobileNet_GTSDB_{}".format(job_name)
+model_name = "MobileNetV2_GTSDB_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/MobileNet/GTSDB/{}".format(job_name)
+save_dir = "models/MobileNetV2/GTSDB/{}".format(job_name)
 # Directory which stores the snapshot of models.
-snapshot_dir = "models/MobileNet/GTSDB/{}".format(job_name)
+snapshot_dir = "models/MobileNetV2/GTSDB/{}".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/MobileNet/GTSDB/{}".format(job_name)
+job_dir = "jobs/MobileNetV2/GTSDB/{}".format(job_name)
 # Directory which stores the detection results.
 output_result_dir = "{}/Documents/data/GTSDBdevkit/results/GTSDB/{}/Main".format(os.environ['HOME'], job_name)
 
@@ -314,28 +314,27 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# conv5_5/sep ==> 19 x 19
-# conv6/sep ==> 10 x 10
+# conv5_3/sep ==> 19 x 19
+# conv6_4/sep ==> 10 x 10
 # ssd1_2 ==> 5 x 5
 # ssd2_2 ==> 3 x 3
 # ssd3_2 ==> 2 x 2
 # ssd4_2 ==> 1 x 1
-mbox_source_layers = ['conv5_5/sep', 'conv6/sep', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
+
+mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 mbox_source_layers = mbox_source_layers[:mbox_layer_num]
 
 # in percent %
-min_ratio = 20 # 20
-max_ratio = 90 # 90
+min_ratio = 20
+max_ratio = 90
 step = int(math.floor((max_ratio - min_ratio) / (len(mbox_source_layers) - 2)))
 min_sizes = []
 max_sizes = []
 for ratio in range(min_ratio, max_ratio + 1, step):
   min_sizes.append(min_dim * ratio / 100.)
   max_sizes.append(min_dim * (ratio + step) / 100.)
-min_sizes = [min_dim * 10 / 100.] + min_sizes # 10
-max_sizes = [min_dim * 20 / 100.] + max_sizes # 20
-min_sizes = min_sizes[:mbox_layer_num]
-max_sizes = max_sizes[:mbox_layer_num]
+min_sizes = [min_dim * 10 / 100.] + min_sizes
+max_sizes = [min_dim * 20 / 100.] + max_sizes
 
 steps = [16, 32, 64, 100, 150, 300]
 steps = steps[:mbox_layer_num]
@@ -396,16 +395,17 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
-    'weight_decay': 0.00005,
+    'weight_decay': 0.0005,
     'lr_policy': "multistep",
-    'stepvalue': [20000, 40000, 120000],
-    'gamma': 0.5,
+    'stepvalue': [6000, 12000, 18000],
+    'gamma': 0.1,
+    'momentum': 0.9,
     'iter_size': iter_size,
     'max_iter': 0,
     'snapshot': 0,
     'display': 10,
     'average_loss': 10,
-    'type': "RMSProp",
+    'type': "SGD",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
@@ -463,7 +463,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
 AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
@@ -491,7 +491,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
 AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 

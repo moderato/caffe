@@ -308,8 +308,10 @@ min_dim = 300
 # ssd2_2 ==> 5 x 5
 # ssd3_2 ==> 3 x 3
 # ssd4_2 ==> 1 x 1
+
 mbox_source_layers = ['conv4_3', 'fc7', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 mbox_source_layers = mbox_source_layers[:mbox_layer_num]
+
 # in percent %
 min_ratio = 10 # 20
 max_ratio = 50 # 90
@@ -321,6 +323,7 @@ for ratio in range(min_ratio, max_ratio + 1, step):
   max_sizes.append(min_dim * (ratio + step) / 100.)
 min_sizes = [min_dim * 5 / 100.] + min_sizes # 10
 max_sizes = [min_dim * 10 / 100.] + max_sizes # 20
+
 min_sizes = min_sizes[:mbox_layer_num]
 max_sizes = max_sizes[:mbox_layer_num]
 
