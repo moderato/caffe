@@ -65,7 +65,6 @@ def AddExtraLayers(net, use_batchnorm=True, lr_mult=1):
 
     return net
 
-
 ### Modify the following parameters accordingly ###
 # The directory which contains the caffe code.
 # We assume you are running the script at the CAFFE_ROOT.
@@ -388,11 +387,11 @@ solver_param = {
     'base_lr': base_lr,
     'weight_decay': 0.00005,
     'lr_policy': "multistep",
-    'stepvalue': [20000, 40000, 120000],
+    'stepvalue': [20000, 40000, 60000],
     'gamma': 0.5,
     'iter_size': iter_size,
-    'max_iter': 120000,
-    'snapshot': 1000,
+    'max_iter': 60000,
+    'snapshot': 50000,
     'display': 10,
     'average_loss': 10,
     'type': "RMSProp",

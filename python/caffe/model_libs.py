@@ -170,7 +170,29 @@ def ResBody(net, from_layer, block_name, out2a, out2b, out2c, stride, use_branch
   relu_name = '{}_relu'.format(res_name)
   net[relu_name] = L.ReLU(net[res_name], in_place=True)
 
-def DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=True):
+def DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, conv_kwargs=None, bn_kwargs=None, scale_kwargs=None, use_depthwise=True):
+  if conv_kwargs is None:
+    conv_kwargs = {
+            'param': [dict(lr_mult=1.0, decay_mult=1.0)],
+            'weight_filler': dict(type='msra'),
+            'bias_term': False} # bias_filler?
+
+  if bn_kwargs is None:
+    bn_kwargs = {
+            'param': [dict(lr_mult=0.0, decay_mult=0.0), 
+                      dict(lr_mult=0.0, decay_mult=0.0), 
+                      dict(lr_mult=0.0, decay_mult=0.0)],
+            'use_global_stats': True,
+            'eps': 1e-5}
+
+  if scale_kwargs is None:
+    scale_kwargs = {
+            'param': [dict(lr_mult=1.0, decay_mult=0.0),
+                      dict(lr_mult=1.0, decay_mult=0.0)],
+            'filler': dict(type='constant', value=1.0),
+            'bias_term': True,
+            'bias_filler': dict(type='constant', value=0.0)}
+
   if use_depthwise:
     net['conv{}/dw'.format(depthwise_sep_index)] = L.DepthwiseConvolution(net[net.keys()[-1]], num_output=depthwise_output_num, pad=1, kernel_size=3, stride=depthwise_stride, group=depthwise_output_num, **conv_kwargs)
   else:
@@ -518,17 +540,17 @@ def MobileNetV1Body(net, from_layer, alpha=1, ssd=False):
             depthwise_stride = j
             depthwise_sep_index = '{}_{}'.format(i, j)
 
-            DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, conv_kwargs, bn_kwargs, scale_kwargs)
+            DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index)
 
     # conv5
     for i in [1, 2, 3, 4, 5]:
-      DepthwiseBlock(net, alpha*512, alpha*512, 1, '5_{}'.format(i), conv_kwargs, bn_kwargs, scale_kwargs)
+      DepthwiseBlock(net, alpha*512, alpha*512, 1, '5_{}'.format(i))
 
     # conv5_6
-    DepthwiseBlock(net, alpha*512, alpha*1024, 2, '5_6', conv_kwargs, bn_kwargs, scale_kwargs)
+    DepthwiseBlock(net, alpha*512, alpha*1024, 2, '5_6')
 
     # conv6
-    DepthwiseBlock(net, alpha*1024, alpha*1024, 1, '6', conv_kwargs, bn_kwargs, scale_kwargs)
+    DepthwiseBlock(net, alpha*1024, alpha*1024, 1, '6')
 
     if not ssd:
         net['pool6'] = L.Pooling(net['relu6/sep'], pool=P.Pooling.AVE, global_pooling=True)

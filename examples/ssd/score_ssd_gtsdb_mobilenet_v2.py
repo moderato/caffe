@@ -64,6 +64,44 @@ def AddExtraLayers(net, use_batchnorm=True, lr_mult=1):
 
     return net
 
+def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
+    use_relu = True
+
+    # Add additional convolutional layers.
+    # 10 x 10
+    from_layer = net.keys()[-1]
+    out_layer = "conv7_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*256, 1, 0, 1,
+        lr_mult=lr_mult)
+
+    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2')
+
+    # 5 x 5
+    from_layer = net.keys()[-1]
+    out_layer = "conv8_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
+      lr_mult=lr_mult)
+
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2')
+
+    # 3 x 3
+    from_layer = net.keys()[-1]
+    out_layer = "conv9_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
+      lr_mult=lr_mult)
+
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2')
+
+    # 1 x 1
+    from_layer = net.keys()[-1]
+    out_layer = "conv10_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*64, 1, 0, 1,
+      lr_mult=lr_mult)
+
+    DepthwiseBlock(net, alpha*64, alpha*128, 2, '10_2')
+
+    return net
+
 
 ### Modify the following parameters accordingly ###
 # Notice: we do evaluation by setting the solver parameters approximately.
@@ -224,19 +262,20 @@ use_batchnorm = False
 lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
-    base_lr = 0.00004
+    base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 0.000004
+    base_lr = 2e-5
 
 nms_top_k = 100
 top_k = 40
 mbox_layer_num = 6
 square = True
 alpha = 1
+Lite = True
 
 # Modify the job name if you want.
-job_name = "SSD_{}_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, mbox_layer_num, square, alpha)
+job_name = "SSD{}_{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, mbox_layer_num, square, alpha)
 # The name of the model. Modify it if you want.
 model_name = "MobileNetV2_GTSDB_{}".format(job_name)
 
@@ -320,8 +359,10 @@ min_dim = 300
 # ssd2_2 ==> 3 x 3
 # ssd3_2 ==> 2 x 2
 # ssd4_2 ==> 1 x 1
-
-mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
+if Lite:
+    mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'conv7_2/sep', 'conv8_2/sep', 'conv9_2/sep', 'conv10_2/sep']
+else:
+    mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 mbox_source_layers = mbox_source_layers[:mbox_layer_num]
 
 # in percent %
@@ -346,7 +387,7 @@ else:
     aspect_ratios = aspect_ratios[:mbox_layer_num]
 
 # L2 normalize conv5_5/sep.
-normalizations = [20, -1, -1, -1, -1, -1]
+normalizations = [-1, -1, -1, -1, -1, -1]
 normalizations = normalizations[:mbox_layer_num]
 
 # variance used to encode/decode prior bboxes.
@@ -395,17 +436,16 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
-    'weight_decay': 0.0005,
+    'weight_decay': 0.00001,
     'lr_policy': "multistep",
-    'stepvalue': [6000, 12000, 18000],
-    'gamma': 0.1,
-    'momentum': 0.9,
+    'stepvalue': [20000, 40000, 120000],
+    'gamma': 0.5,
     'iter_size': iter_size,
     'max_iter': 0,
     'snapshot': 0,
     'display': 10,
     'average_loss': 10,
-    'type': "SGD",
+    'type': "RMSProp",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
@@ -465,7 +505,10 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
 
 MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
-AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+if Lite:
+    AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
+else:
+    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
         use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
@@ -493,7 +536,10 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
 
 MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
-AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+if Lite:
+    AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
+else:
+    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
         use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
