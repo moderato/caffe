@@ -269,13 +269,12 @@ else:
 
 nms_top_k = 100
 top_k = 40
-mbox_layer_num = 6
 square = True
 alpha = 1
 Lite = True
 
 # Modify the job name if you want.
-job_name = "SSD{}_{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, mbox_layer_num, square, alpha)
+job_name = "SSD{}_{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
 model_name = "MobileNetV2_GTSDB_{}".format(job_name)
 
@@ -363,7 +362,6 @@ if Lite:
     mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'conv7_2/sep', 'conv8_2/sep', 'conv9_2/sep', 'conv10_2/sep']
 else:
     mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
-mbox_source_layers = mbox_source_layers[:mbox_layer_num]
 
 # in percent %
 min_ratio = 20
@@ -378,17 +376,14 @@ min_sizes = [min_dim * 10 / 100.] + min_sizes
 max_sizes = [min_dim * 20 / 100.] + max_sizes
 
 steps = [16, 32, 64, 100, 150, 300]
-steps = steps[:mbox_layer_num]
 
 if square:
-    aspect_ratios = [[]] * mbox_layer_num
+    aspect_ratios = [[]] * 6
 else:
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-    aspect_ratios = aspect_ratios[:mbox_layer_num]
 
 # L2 normalize conv5_5/sep.
 normalizations = [-1, -1, -1, -1, -1, -1]
-normalizations = normalizations[:mbox_layer_num]
 
 # variance used to encode/decode prior bboxes.
 if code_type == P.PriorBox.CENTER_SIZE:
@@ -438,7 +433,7 @@ solver_param = {
     'base_lr': base_lr,
     'weight_decay': 0.00001,
     'lr_policy': "multistep",
-    'stepvalue': [20000, 40000, 120000],
+    'stepvalue': [20000, 80000 if Lite else 40000, 200000 if Lite else 50000],
     'gamma': 0.5,
     'iter_size': iter_size,
     'max_iter': 0,
