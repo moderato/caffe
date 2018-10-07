@@ -274,7 +274,7 @@ alpha = 1
 Lite = True
 
 # Modify the job name if you want.
-job_name = "SSD{}_{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
+job_name = "SSD{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
 model_name = "MobileNetV2_GTSDB_{}".format(job_name)
 
@@ -428,31 +428,58 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
-solver_param = {
-    # Train parameters
-    'base_lr': base_lr,
-    'weight_decay': 0.00001,
-    'lr_policy': "multistep",
-    'stepvalue': [20000, 80000 if Lite else 40000, 200000 if Lite else 50000],
-    'gamma': 0.5,
-    'iter_size': iter_size,
-    'max_iter': 0,
-    'snapshot': 0,
-    'display': 10,
-    'average_loss': 10,
-    'type': "RMSProp",
-    'solver_mode': solver_mode,
-    'device_id': device_id,
-    'debug_info': False,
-    'snapshot_after_train': False,
-    # Test parameters
-    'test_iter': [test_iter],
-    'test_interval': 10000,
-    'eval_type': "detection",
-    'ap_version': "11point",
-    'test_initialization': True,
-    # 'show_per_class_result': True,
-    }
+if Lite:
+    solver_param = {
+        # Train parameters
+        'base_lr': base_lr,
+        'weight_decay': 0.00001,
+        'lr_policy': "multistep",
+        'stepvalue': [20000, 40000, 100000, 200000],
+        'gamma': 0.5,
+        'iter_size': iter_size,
+        'max_iter': 0,
+        'snapshot': 0,
+        'display': 10,
+        'average_loss': 10,
+        'type': "RMSProp",
+        'solver_mode': solver_mode,
+        'device_id': device_id,
+        'debug_info': False,
+        'snapshot_after_train': False,
+        # Test parameters
+        'test_iter': [test_iter],
+        'test_interval': 10000,
+        'eval_type': "detection",
+        'ap_version': "11point",
+        'test_initialization': True,
+        # 'show_per_class_result': True,
+        }
+else:
+    solver_param = {
+        # Train parameters
+        'base_lr': base_lr,
+        'weight_decay': 0.00001,
+        'lr_policy': "multistep",
+        'stepvalue': [20000, 40000, 50000],
+        'gamma': 0.5,
+        'iter_size': iter_size,
+        'max_iter': 0,
+        'snapshot': 0,
+        'display': 10,
+        'average_loss': 10,
+        'type': "RMSProp",
+        'solver_mode': solver_mode,
+        'device_id': device_id,
+        'debug_info': False,
+        'snapshot_after_train': False,
+        # Test parameters
+        'test_iter': [test_iter],
+        'test_interval': 10000,
+        'eval_type': "detection",
+        'ap_version': "11point",
+        'test_initialization': True,
+        # 'show_per_class_result': True,
+        }
 
 # parameters for generating detection output.
 det_out_param = {

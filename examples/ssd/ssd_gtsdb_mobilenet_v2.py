@@ -273,7 +273,7 @@ nms_top_k = 100
 top_k = 40
 square = True
 alpha = 1
-Lite = False
+Lite = True
 
 # Modify the job name if you want.
 job_name = "SSD{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
@@ -418,31 +418,58 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
-solver_param = {
-    # Train parameters
-    'base_lr': base_lr,
-    'weight_decay': 0.00001,
-    'lr_policy': "multistep",
-    'stepvalue': [20000, 80000 if Lite else 40000, 200000 if Lite else 50000],
-    'gamma': 0.5,
-    'iter_size': iter_size,
-    'max_iter': 120000,
-    'snapshot': 50000,
-    'display': 10,
-    'average_loss': 10,
-    'type': "RMSProp",
-    'solver_mode': solver_mode,
-    'device_id': device_id,
-    'debug_info': False,
-    'snapshot_after_train': True,
-    # Test parameters
-    'test_iter': [test_iter],
-    'test_interval': 10000,
-    'eval_type': "detection",
-    'ap_version': "MaxIntegral",
-    'test_initialization': False,
-    # 'show_per_class_result': True,
-    }
+if Lite:
+    solver_param = {
+        # Train parameters
+        'base_lr': base_lr,
+        'weight_decay': 0.00001,
+        'lr_policy': "multistep",
+        'stepvalue': [20000, 40000, 100000, 200000],
+        'gamma': 0.5,
+        'iter_size': iter_size,
+        'max_iter': 200000,
+        'snapshot': 160000,
+        'display': 10,
+        'average_loss': 10,
+        'type': "RMSProp",
+        'solver_mode': solver_mode,
+        'device_id': device_id,
+        'debug_info': False,
+        'snapshot_after_train': True,
+        # Test parameters
+        'test_iter': [test_iter],
+        'test_interval': 10000,
+        'eval_type': "detection",
+        'ap_version': "MaxIntegral",
+        'test_initialization': False,
+        # 'show_per_class_result': True,
+        }
+else:
+    solver_param = {
+        # Train parameters
+        'base_lr': base_lr,
+        'weight_decay': 0.00001,
+        'lr_policy': "multistep",
+        'stepvalue': [20000, 40000, 50000],
+        'gamma': 0.5,
+        'iter_size': iter_size,
+        'max_iter': 50000,
+        'snapshot': 50000,
+        'display': 10,
+        'average_loss': 10,
+        'type': "RMSProp",
+        'solver_mode': solver_mode,
+        'device_id': device_id,
+        'debug_info': False,
+        'snapshot_after_train': True,
+        # Test parameters
+        'test_iter': [test_iter],
+        'test_interval': 10000,
+        'eval_type': "detection",
+        'ap_version': "MaxIntegral",
+        'test_initialization': False,
+        # 'show_per_class_result': True,
+        }
 
 # solver_param = {
 #     # Train parameters
