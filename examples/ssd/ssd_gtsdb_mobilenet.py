@@ -229,16 +229,15 @@ if use_batchnorm:
     base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 2e-5
+    base_lr = 1e-6
 
 nms_top_k = 100
 top_k = 40
-mbox_layer_num = 6
 square = True
 alpha = 1
 
 # Modify the job name if you want.
-job_name = "SSD_{}_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, mbox_layer_num, square, alpha)
+job_name = "SSD_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
 model_name = "MobileNet_GTSDB_{}".format(job_name)
 
@@ -312,7 +311,6 @@ min_dim = 300
 # ssd4_2 ==> 1 x 1
 
 mbox_source_layers = ['conv5_5/sep', 'conv6/sep', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
-mbox_source_layers = mbox_source_layers[:mbox_layer_num]
 
 # in percent %
 min_ratio = 20
@@ -327,17 +325,14 @@ min_sizes = [min_dim * 10 / 100.] + min_sizes
 max_sizes = [min_dim * 20 / 100.] + max_sizes
 
 steps = [16, 32, 64, 100, 150, 300]
-steps = steps[:mbox_layer_num]
 
 if square:
-    aspect_ratios = [[]] * mbox_layer_num
+    aspect_ratios = [[]] * 6
 else:
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-    aspect_ratios = aspect_ratios[:mbox_layer_num]
 
 # L2 normalize conv5_5.
-normalizations = [20, -1, -1, -1, -1, -1]
-normalizations = normalizations[:mbox_layer_num]
+normalizations = [-1, -1, -1, -1, -1, -1]
 
 # variance used to encode/decode prior bboxes.
 if code_type == P.PriorBox.CENTER_SIZE:
@@ -382,19 +377,46 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
+# solver_param = {
+#     # Train parameters
+#     'base_lr': base_lr,
+#     'weight_decay': 0.00005,
+#     'lr_policy': "multistep",
+#     'stepvalue': [20000, 40000, 60000],
+#     'gamma': 0.5,
+#     'iter_size': iter_size,
+#     'max_iter': 60000,
+#     'snapshot': 50000,
+#     'display': 10,
+#     'average_loss': 10,
+#     'type': "RMSProp",
+#     'solver_mode': solver_mode,
+#     'device_id': device_id,
+#     'debug_info': False,
+#     'snapshot_after_train': True,
+#     # Test parameters
+#     'test_iter': [test_iter],
+#     'test_interval': 1000,
+#     'eval_type': "detection",
+#     'ap_version': "MaxIntegral",
+#     'test_initialization': False,
+#     # 'show_per_class_result': True,
+#     }
+
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
     'weight_decay': 0.00005,
     'lr_policy': "multistep",
-    'stepvalue': [20000, 40000, 60000],
-    'gamma': 0.5,
+    'stepvalue': [20000, 50000, 80000],
+    'gamma': 0.1,
+    'momentum': 0.9,
     'iter_size': iter_size,
-    'max_iter': 60000,
-    'snapshot': 50000,
+    'max_iter': 80000,
+    'snapshot': 60000,
     'display': 10,
     'average_loss': 10,
-    'type': "RMSProp",
+    'type': "SGD",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
@@ -452,7 +474,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
 # with open('net2.prototxt', 'w') as f:
 #     print(net.to_proto(), file=f)
 # exit(0)
@@ -483,7 +505,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV1Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
 
 AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 

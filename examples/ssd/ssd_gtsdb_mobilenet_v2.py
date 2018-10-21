@@ -260,14 +260,14 @@ test_transform_param = {
 
 # If true, use batch norm for all newly added layers.
 # Currently only the non batch norm version has been tested.
-use_batchnorm = False
+use_batchnorm = True
 lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
-    base_lr = 4e-5
+    base_lr = 1e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 2e-5
+    base_lr = 1e-7
 
 nms_top_k = 100
 top_k = 40
@@ -419,57 +419,111 @@ test_batch_size = 1
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
 if Lite:
+    # solver_param = {
+    #     # Train parameters
+    #     'base_lr': base_lr,
+    #     'weight_decay': 0.00001,
+    #     'lr_policy': "multistep",
+    #     'stepvalue': [20000, 40000, 100000, 200000],
+    #     'gamma': 0.5,
+    #     'iter_size': iter_size,
+    #     'max_iter': 200000,
+    #     'snapshot': 60000,
+    #     'display': 10,
+    #     'average_loss': 10,
+    #     'type': "RMSProp",
+    #     'solver_mode': solver_mode,
+    #     'device_id': device_id,
+    #     'debug_info': False,
+    #     'snapshot_after_train': True,
+    #     # Test parameters
+    #     'test_iter': [test_iter],
+    #     'test_interval': 10000,
+    #     'eval_type': "detection",
+    #     'ap_version': "MaxIntegral",
+    #     'test_initialization': False,
+    #     # 'show_per_class_result': True,
+    #     }
+
     solver_param = {
         # Train parameters
         'base_lr': base_lr,
-        'weight_decay': 0.00001,
+        'weight_decay': 0.00005,
         'lr_policy': "multistep",
-        'stepvalue': [20000, 40000, 100000, 200000],
-        'gamma': 0.5,
+        'stepvalue': [30000, 50000, 120000],
+        'gamma': 0.2,
+        'momentum': 0.9,
         'iter_size': iter_size,
         'max_iter': 200000,
-        'snapshot': 160000,
+        'snapshot': 60000,
         'display': 10,
         'average_loss': 10,
-        'type': "RMSProp",
+        'type': "Nesterov",
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
         'snapshot_after_train': True,
         # Test parameters
         'test_iter': [test_iter],
-        'test_interval': 10000,
+        'test_interval': 1000,
         'eval_type': "detection",
         'ap_version': "MaxIntegral",
         'test_initialization': False,
         # 'show_per_class_result': True,
-        }
+    }
 else:
+    # solver_param = {
+    #     # Train parameters
+    #     'base_lr': base_lr,
+    #     'weight_decay': 0.00001,
+    #     'lr_policy': "multistep",
+    #     'stepvalue': [20000, 40000, 50000],
+    #     'gamma': 0.5,
+    #     'iter_size': iter_size,
+    #     'max_iter': 50000,
+    #     'snapshot': 50000,
+    #     'display': 10,
+    #     'average_loss': 10,
+    #     'type': "RMSProp",
+    #     'solver_mode': solver_mode,
+    #     'device_id': device_id,
+    #     'debug_info': False,
+    #     'snapshot_after_train': True,
+    #     # Test parameters
+    #     'test_iter': [test_iter],
+    #     'test_interval': 10000,
+    #     'eval_type': "detection",
+    #     'ap_version': "MaxIntegral",
+    #     'test_initialization': False,
+    #     # 'show_per_class_result': True,
+    #     }
+
     solver_param = {
         # Train parameters
         'base_lr': base_lr,
-        'weight_decay': 0.00001,
+        'weight_decay': 0.00005,
         'lr_policy': "multistep",
-        'stepvalue': [20000, 40000, 50000],
-        'gamma': 0.5,
+        'stepvalue': [30000, 60000, 80000],
+        'gamma': 0.1,
+        'momentum': 0.95,
         'iter_size': iter_size,
-        'max_iter': 50000,
-        'snapshot': 50000,
+        'max_iter': 80000,
+        'snapshot': 60000,
         'display': 10,
         'average_loss': 10,
-        'type': "RMSProp",
+        'type': "Nesterov",
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
         'snapshot_after_train': True,
         # Test parameters
         'test_iter': [test_iter],
-        'test_interval': 10000,
+        'test_interval': 1000,
         'eval_type': "detection",
         'ap_version': "MaxIntegral",
         'test_initialization': False,
         # 'show_per_class_result': True,
-        }
+    }
 
 # solver_param = {
 #     # Train parameters

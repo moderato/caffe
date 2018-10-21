@@ -423,7 +423,7 @@ elif normalization_mode == P.Loss.FULL:
 
 # Evaluate on whole test set.
 num_test_image = 153
-test_batch_size = 1
+test_batch_size = 4
 # Ideally test_batch_size should be divisible by num_test_image,
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
@@ -525,7 +525,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
 
 if Lite:
     AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
@@ -556,7 +556,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
 
 if Lite:
     AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)

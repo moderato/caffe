@@ -502,7 +502,7 @@ def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False, d
 
     return net
 
-def MobileNetV1Body(net, from_layer, alpha=1, ssd=False):
+def MobileNetV1Body(net, from_layer, alpha=1, ssd=False, use_depthwise=True):
     conv_kwargs = {
             'param': [dict(lr_mult=1.0, decay_mult=1.0)],
             'weight_filler': dict(type='msra'),
@@ -540,17 +540,17 @@ def MobileNetV1Body(net, from_layer, alpha=1, ssd=False):
             depthwise_stride = j
             depthwise_sep_index = '{}_{}'.format(i, j)
 
-            DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index)
+            DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, use_depthwise=use_depthwise)
 
     # conv5
     for i in [1, 2, 3, 4, 5]:
-      DepthwiseBlock(net, alpha*512, alpha*512, 1, '5_{}'.format(i))
+      DepthwiseBlock(net, alpha*512, alpha*512, 1, '5_{}'.format(i), use_depthwise=use_depthwise)
 
     # conv5_6
-    DepthwiseBlock(net, alpha*512, alpha*1024, 2, '5_6')
+    DepthwiseBlock(net, alpha*512, alpha*1024, 2, '5_6', use_depthwise=use_depthwise)
 
     # conv6
-    DepthwiseBlock(net, alpha*1024, alpha*1024, 1, '6')
+    DepthwiseBlock(net, alpha*1024, alpha*1024, 1, '6', use_depthwise=use_depthwise)
 
     if not ssd:
         net['pool6'] = L.Pooling(net['relu6/sep'], pool=P.Pooling.AVE, global_pooling=True)
@@ -558,7 +558,7 @@ def MobileNetV1Body(net, from_layer, alpha=1, ssd=False):
 
     return net
 
-def MobileNetV2Body(net, from_layer, alpha=1, ssd=False):
+def MobileNetV2Body(net, from_layer, alpha=1, ssd=False, use_depthwise=True):
   conv_kwargs = {
           'param': [dict(lr_mult=1.0, decay_mult=1.0)],
           'weight_filler': dict(type='msra'),
@@ -592,51 +592,51 @@ def MobileNetV2Body(net, from_layer, alpha=1, ssd=False):
 
   # Line 2
   # conv2_1
-  Bottleneck(net, 1, alpha*32, alpha*16, '2_1', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*32, alpha*16, '2_1', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 3
   # conv2_2
-  Bottleneck(net, 2, alpha*16*expansion, alpha*24, '2_2', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 2, alpha*16*expansion, alpha*24, '2_2', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv3_1
-  Bottleneck(net, 1, alpha*24*expansion, alpha*24, '3_1', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*24*expansion, alpha*24, '3_1', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 4
   # conv3_2
-  Bottleneck(net, 2, alpha*24*expansion, alpha*32, '3_2', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 2, alpha*24*expansion, alpha*32, '3_2', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv4_1
-  Bottleneck(net, 1, alpha*32*expansion, alpha*32, '4_1', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*32*expansion, alpha*32, '4_1', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv4_2
-  Bottleneck(net, 1, alpha*32*expansion, alpha*32, '4_2', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*32*expansion, alpha*32, '4_2', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 5 (following the wrong version 1; should be stride = 2 and next line stride = 1)
   # conv4_3
-  Bottleneck(net, 1, alpha*32*expansion, alpha*64, '4_3', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*32*expansion, alpha*64, '4_3', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv4_4
-  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_4', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_4', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv4_5
-  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_5', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_5', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv4_6
-  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_6', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*64*expansion, alpha*64, '4_6', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 6
   # conv4_7
-  Bottleneck(net, 2, alpha*64*expansion, alpha*96, '4_7', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 2, alpha*64*expansion, alpha*96, '4_7', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv5_1
-  Bottleneck(net, 1, alpha*96*expansion, alpha*96, '5_1', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*96*expansion, alpha*96, '5_1', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv5_2
-  Bottleneck(net, 1, alpha*96*expansion, alpha*96, '5_2', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*96*expansion, alpha*96, '5_2', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 7
   # conv5_3
-  Bottleneck(net, 2, alpha*96*expansion, alpha*160, '5_3', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 2, alpha*96*expansion, alpha*160, '5_3', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv6_1
-  Bottleneck(net, 1, alpha*160*expansion, alpha*160, '6_1', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*160*expansion, alpha*160, '6_1', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
   # conv6_2
-  Bottleneck(net, 1, alpha*160*expansion, alpha*160, '6_2', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*160*expansion, alpha*160, '6_2', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 8
   # conv6_3
-  Bottleneck(net, 1, alpha*160*expansion, alpha*320, '6_3', conv_kwargs, bn_kwargs, scale_kwargs)
+  Bottleneck(net, 1, alpha*160*expansion, alpha*320, '6_3', conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=use_depthwise)
 
   # Line 9
   # conv6_4
