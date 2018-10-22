@@ -1,4 +1,6 @@
-The codes for MobileNet-V1-SSD (https://arxiv.org/pdf/1704.04861.pdf) and MobileNet-V2-SSDLite (https://arxiv.org/pdf/1801.04381.pdf) are under the directory examples/ssd, together with the other SSD codes. The implementations of models are in python/caffe/model_libs.py. Reference: [MobileNet-V1/V2](https://github.com/shicai/MobileNet-Caffe) [MobileNet-V1-SSD](https://github.com/chuanqi305/MobileNet-SSD) [MobileNet-V2-SSDLite](https://github.com/chuanqi305/MobileNetv2-SSDLite)
+The codes for MobileNet-V1-SSD (https://arxiv.org/pdf/1704.04861.pdf) and MobileNet-V2-SSDLite (https://arxiv.org/pdf/1801.04381.pdf) are under the directory examples/ssd, together with the other SSD codes. The implementations of models are in python/caffe/model_libs.py.  
+
+Reference: [MobileNet-V1/V2](https://github.com/shicai/MobileNet-Caffe), [MobileNet-V1-SSD](https://github.com/chuanqi305/MobileNet-SSD), [MobileNet-V2-SSDLite](https://github.com/chuanqi305/MobileNetv2-SSDLite)
 
 To prepare the GTSDB dataset for training, run
 ```Shell
@@ -10,7 +12,7 @@ To prepare the GTSDB dataset for training, run
   cd $CAFFE_ROOT
   ./data/GTSDB/create_data.sh
   ./data/GTSDB/create_list.sh
-```
+```  
 which is similar the way of preparing VOC datasets.
 
 Below is the original README file of the [SSD](https://github.com/weiliu89/caffe/tree/ssd) repo.
