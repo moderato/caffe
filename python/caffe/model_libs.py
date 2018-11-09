@@ -170,7 +170,7 @@ def ResBody(net, from_layer, block_name, out2a, out2b, out2c, stride, use_branch
   relu_name = '{}_relu'.format(res_name)
   net[relu_name] = L.ReLU(net[res_name], in_place=True)
 
-def DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, conv_kwargs=None, bn_kwargs=None, scale_kwargs=None, use_depthwise=True):
+def DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, depthwise_sep_index, conv_kwargs=None, bn_kwargs=None, scale_kwargs=None, use_depthwise=True, use_batchnorm=True, use_scale=True):
   if conv_kwargs is None:
     conv_kwargs = {
             'param': [dict(lr_mult=1.0, decay_mult=1.0)],
@@ -197,13 +197,17 @@ def DepthwiseBlock(net, depthwise_output_num, sep_output_num, depthwise_stride, 
     net['conv{}/dw'.format(depthwise_sep_index)] = L.DepthwiseConvolution(net[net.keys()[-1]], num_output=depthwise_output_num, pad=1, kernel_size=3, stride=depthwise_stride, group=depthwise_output_num, **conv_kwargs)
   else:
     net['conv{}/dw'.format(depthwise_sep_index)] = L.Convolution(net[net.keys()[-1]], num_output=depthwise_output_num, pad=1, kernel_size=3, stride=depthwise_stride, group=depthwise_output_num, engine=P.Convolution.CAFFE, **conv_kwargs)
-  net['conv{}/dw/bn'.format(depthwise_sep_index)] = L.BatchNorm(net[net.keys()[-1]], in_place=True, **bn_kwargs)
-  net['conv{}/dw/scale'.format(depthwise_sep_index)] = L.Scale(net[net.keys()[-1]], in_place=True, **scale_kwargs)
+  if use_batchnorm:
+    net['conv{}/dw/bn'.format(depthwise_sep_index)] = L.BatchNorm(net[net.keys()[-1]], in_place=True, **bn_kwargs)
+    if use_scale:
+      net['conv{}/dw/scale'.format(depthwise_sep_index)] = L.Scale(net[net.keys()[-1]], in_place=True, **scale_kwargs)
   net['relu{}/dw'.format(depthwise_sep_index)] = L.ReLU(net[net.keys()[-1]], in_place=True)
 
   net['conv{}/sep'.format(depthwise_sep_index)] = L.Convolution(net[net.keys()[-1]], num_output=sep_output_num, pad=0, kernel_size=1, stride=1, **conv_kwargs)
-  net['conv{}/sep/bn'.format(depthwise_sep_index)] = L.BatchNorm(net[net.keys()[-1]], in_place=True, **bn_kwargs)
-  net['conv{}/sep/scale'.format(depthwise_sep_index)] = L.Scale(net[net.keys()[-1]], in_place=True, **scale_kwargs)
+  if use_batchnorm:
+    net['conv{}/sep/bn'.format(depthwise_sep_index)] = L.BatchNorm(net[net.keys()[-1]], in_place=True, **bn_kwargs)
+    if use_scale:
+      net['conv{}/sep/scale'.format(depthwise_sep_index)] = L.Scale(net[net.keys()[-1]], in_place=True, **scale_kwargs)
   net['relu{}/sep'.format(depthwise_sep_index)] = L.ReLU(net[net.keys()[-1]], in_place=True)
 
 def Bottleneck(net, stride, expand_output_num, linear_output_num, layer_index, conv_kwargs, bn_kwargs, scale_kwargs, use_depthwise=True):

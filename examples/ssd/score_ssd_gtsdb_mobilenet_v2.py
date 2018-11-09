@@ -74,7 +74,7 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*256, 1, 0, 1,
         lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2')
+    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2', use_batchnorm=use_batchnorm)
 
     # 5 x 5
     from_layer = net.keys()[-1]
@@ -82,7 +82,7 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2', use_batchnorm=use_batchnorm)
 
     # 3 x 3
     from_layer = net.keys()[-1]
@@ -90,15 +90,15 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2', use_batchnorm=use_batchnorm)
 
     # 1 x 1
     from_layer = net.keys()[-1]
     out_layer = "conv10_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*64, 1, 0, 1,
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*64, alpha*128, 2, '10_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '10_2', use_batchnorm=use_batchnorm)
 
     return net
 
@@ -525,7 +525,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
 if Lite:
     AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
@@ -533,7 +533,8 @@ else:
     AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        # use_batchnorm=use_batchnorm, 
+        min_sizes=min_sizes, max_sizes=max_sizes,
         aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
         num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
@@ -556,7 +557,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True, use_depthwise=True)
+MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
 
 if Lite:
     AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
@@ -564,7 +565,8 @@ else:
     AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        # use_batchnorm=use_batchnorm, 
+        min_sizes=min_sizes, max_sizes=max_sizes,
         aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
         num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)

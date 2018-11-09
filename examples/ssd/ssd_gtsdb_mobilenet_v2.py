@@ -75,7 +75,7 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*256, 1, 0, 1,
         lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2')
+    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2', use_batchnorm=use_batchnorm)
 
     # 5 x 5
     from_layer = net.keys()[-1]
@@ -83,7 +83,7 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2', use_batchnorm=use_batchnorm)
 
     # 3 x 3
     from_layer = net.keys()[-1]
@@ -91,15 +91,15 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2', use_batchnorm=use_batchnorm)
 
     # 1 x 1
     from_layer = net.keys()[-1]
     out_layer = "conv10_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*64, 1, 0, 1,
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*64, alpha*128, 2, '10_2')
+    DepthwiseBlock(net, alpha*128, alpha*256, 2, '10_2', use_batchnorm=use_batchnorm)
 
     return net
 
@@ -260,14 +260,14 @@ test_transform_param = {
 
 # If true, use batch norm for all newly added layers.
 # Currently only the non batch norm version has been tested.
-use_batchnorm = True
+use_batchnorm = False # No BN in 
 lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
     base_lr = 1e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 1e-7
+    base_lr = 2e-7
 
 nms_top_k = 100
 top_k = 40
@@ -425,7 +425,7 @@ if Lite:
     #     'weight_decay': 0.00001,
     #     'lr_policy': "multistep",
     #     'stepvalue': [20000, 40000, 100000, 200000],
-    #     'gamma': 0.5,
+    #     'gamma': 0.2,
     #     'iter_size': iter_size,
     #     'max_iter': 200000,
     #     'snapshot': 60000,
@@ -438,7 +438,7 @@ if Lite:
     #     'snapshot_after_train': True,
     #     # Test parameters
     #     'test_iter': [test_iter],
-    #     'test_interval': 10000,
+    #     'test_interval': 1000,
     #     'eval_type': "detection",
     #     'ap_version': "MaxIntegral",
     #     'test_initialization': False,
@@ -458,7 +458,7 @@ if Lite:
         'snapshot': 60000,
         'display': 10,
         'average_loss': 10,
-        'type': "Nesterov",
+        'type': "SGD",
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
@@ -511,14 +511,14 @@ else:
         'snapshot': 60000,
         'display': 10,
         'average_loss': 10,
-        'type': "Nesterov",
+        'type': "SGD",
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
         'snapshot_after_train': True,
         # Test parameters
         'test_iter': [test_iter],
-        'test_interval': 1000,
+        'test_interval': 3000,
         'eval_type': "detection",
         'ap_version': "MaxIntegral",
         'test_initialization': False,
@@ -607,7 +607,8 @@ else:
     AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        # use_batchnorm=use_batchnorm, 
+        min_sizes=min_sizes, max_sizes=max_sizes,
         aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
         num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
@@ -638,7 +639,8 @@ else:
     AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        # use_batchnorm=use_batchnorm, 
+        min_sizes=min_sizes, max_sizes=max_sizes,
         aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
         num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
