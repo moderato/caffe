@@ -96,10 +96,10 @@ def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
     # 1 x 1
     from_layer = net.keys()[-1]
     out_layer = "conv10_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*64, 1, 0, 1,
       lr_mult=lr_mult)
 
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '10_2', use_batchnorm=use_batchnorm)
+    DepthwiseBlock(net, alpha*64, alpha*128, 2, '10_2', use_batchnorm=use_batchnorm)
 
     return net
 
@@ -260,14 +260,15 @@ test_transform_param = {
 
 # If true, use batch norm for all newly added layers.
 # Currently only the non batch norm version has been tested.
-use_batchnorm = False # No BN in 
+use_batchnorm = False
 lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
     base_lr = 1e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 2e-7
+    base_lr = 2e-7 # SGD
+    # base_lr = 4e-6 # RMSProp
 
 nms_top_k = 100
 top_k = 40
@@ -341,8 +342,8 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# conv5_3/expand ==> 19 x 19
-# conv6_4 ==> 10 x 10
+# conv5_3/sep ==> 19 x 19
+# conv6_4/sep ==> 10 x 10
 # ssd1_2 ==> 5 x 5
 # ssd2_2 ==> 3 x 3
 # ssd3_2 ==> 2 x 2
@@ -372,7 +373,7 @@ if square:
 else:
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
 
-# L2 normalize conv5_3/expand.
+# L2 normalize conv5_3/sep.
 normalizations = [-1, -1, -1, -1, -1, -1]
 
 # variance used to encode/decode prior bboxes.
@@ -419,46 +420,19 @@ test_batch_size = 1
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
 if Lite:
-    # solver_param = {
-    #     # Train parameters
-    #     'base_lr': base_lr,
-    #     'weight_decay': 0.00001,
-    #     'lr_policy': "multistep",
-    #     'stepvalue': [20000, 40000, 100000, 200000],
-    #     'gamma': 0.2,
-    #     'iter_size': iter_size,
-    #     'max_iter': 200000,
-    #     'snapshot': 60000,
-    #     'display': 10,
-    #     'average_loss': 10,
-    #     'type': "RMSProp",
-    #     'solver_mode': solver_mode,
-    #     'device_id': device_id,
-    #     'debug_info': False,
-    #     'snapshot_after_train': True,
-    #     # Test parameters
-    #     'test_iter': [test_iter],
-    #     'test_interval': 1000,
-    #     'eval_type': "detection",
-    #     'ap_version': "MaxIntegral",
-    #     'test_initialization': False,
-    #     # 'show_per_class_result': True,
-    #     }
-
     solver_param = {
         # Train parameters
         'base_lr': base_lr,
-        'weight_decay': 0.00005,
+        'weight_decay': 0.00001,
         'lr_policy': "multistep",
-        'stepvalue': [30000, 50000, 120000],
+        'stepvalue': [20000, 40000, 100000],
         'gamma': 0.2,
-        'momentum': 0.9,
         'iter_size': iter_size,
         'max_iter': 200000,
         'snapshot': 60000,
         'display': 10,
         'average_loss': 10,
-        'type': "SGD",
+        'type': "RMSProp",
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
@@ -470,7 +444,34 @@ if Lite:
         'ap_version': "MaxIntegral",
         'test_initialization': False,
         # 'show_per_class_result': True,
-    }
+        }
+
+    # solver_param = {
+    #     # Train parameters
+    #     'base_lr': base_lr,
+    #     'weight_decay': 0.00005,
+    #     'lr_policy': "multistep",
+    #     'stepvalue': [30000, 50000, 120000],
+    #     'gamma': 0.2,
+    #     'momentum': 0.9,
+    #     'iter_size': iter_size,
+    #     'max_iter': 200000,
+    #     'snapshot': 60000,
+    #     'display': 10,
+    #     'average_loss': 10,
+    #     'type': "SGD",
+    #     'solver_mode': solver_mode,
+    #     'device_id': device_id,
+    #     'debug_info': False,
+    #     'snapshot_after_train': True,
+    #     # Test parameters
+    #     'test_iter': [test_iter],
+    #     'test_interval': 1000,
+    #     'eval_type': "detection",
+    #     'ap_version': "MaxIntegral",
+    #     'test_initialization': False,
+    #     # 'show_per_class_result': True,
+    # }
 else:
     # solver_param = {
     #     # Train parameters

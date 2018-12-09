@@ -111,8 +111,56 @@ def ConvBNLayer(net, from_layer, out_layer, use_bn, use_relu, num_output, kernel
     relu_name = '{}_relu'.format(conv_name)
     net[relu_name] = L.ReLU(net[conv_name], in_place=True)
 
-def ResBody(net, from_layer, block_name, out2a, out2b, out2c, stride, use_branch1, dilation=1, **bn_param):
-  # ResBody(net, 'pool1', '2a', 64, 64, 256, 1, True)
+def ResBody(net, from_layer, block_name, out, stride, dilation=1, use_branch1=False, **bn_param):
+  conv_prefix = 'res{}_'.format(block_name)
+  conv_postfix = ''
+  bn_prefix = 'bn{}_'.format(block_name)
+  bn_postfix = ''
+  scale_prefix = 'scale{}_'.format(block_name)
+  scale_postfix = ''
+  use_scale = True
+
+  if use_branch1:
+    branch_name = 'branch1'
+    ConvBNLayer(net, from_layer, branch_name, use_bn=True, use_relu=False,
+        num_output=out, kernel_size=1, pad=0, stride=stride, use_scale=use_scale,
+        conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+    branch1 = '{}{}'.format(conv_prefix, branch_name)
+  else:
+    branch1 = from_layer
+
+  branch_name = 'branch2a'
+  ConvBNLayer(net, from_layer, branch_name, use_bn=True, use_relu=True,
+      num_output=out, kernel_size=3, pad=1, stride=stride, use_scale=use_scale,
+      conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+      bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+      scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+  out_name = '{}{}'.format(conv_prefix, branch_name)
+
+  branch_name = 'branch2b'
+  if dilation == 1:
+    ConvBNLayer(net, out_name, branch_name, use_bn=True, use_relu=True,
+        num_output=out, kernel_size=3, pad=1, stride=1, use_scale=use_scale,
+        conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+  else:
+    pad = int((3 + (dilation - 1) * 2) - 1) // 2
+    ConvBNLayer(net, out_name, branch_name, use_bn=True, use_relu=True,
+        num_output=out, kernel_size=3, pad=pad, stride=1, use_scale=use_scale,
+        dilation=dilation, conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+  branch2 = '{}{}'.format(conv_prefix, branch_name)
+
+  res_name = 'res{}'.format(block_name)
+  net[res_name] = L.Eltwise(net[branch1], net[branch2])
+  relu_name = '{}_relu'.format(res_name)
+  net[relu_name] = L.ReLU(net[res_name], in_place=True)
+
+def ResBottleneckBody(net, from_layer, block_name, out2a, out2b, out2c, stride, use_branch1, dilation=1, **bn_param):
 
   conv_prefix = 'res{}_'.format(block_name)
   conv_postfix = ''
@@ -653,6 +701,158 @@ def MobileNetV2Body(net, from_layer, alpha=1, ssd=False, use_depthwise=True):
     net['pool6'] = L.Pooling(net[net.keys()[-1]], pool=P.Pooling.AVE, global_pooling=True)
     net['fc7'] = L.Convolution(net[net.keys()[-1]], num_output=alpha*1000, kernel_size=1, **fc_kwargs)
 
+def ResNet18Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn_param):
+    conv_prefix = ''
+    conv_postfix = ''
+    bn_prefix = 'bn_'
+    bn_postfix = ''
+    scale_prefix = 'scale_'
+    scale_postfix = ''
+    ConvBNLayer(net, from_layer, 'conv1', use_bn=True, use_relu=True,
+        num_output=64, kernel_size=7, pad=3, stride=2,
+        conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+
+    net.pool1 = L.Pooling(net.conv1, pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+    # Conv2_x, no downsampling
+    ResBody(net, 'pool1', '2a', out=64, stride=1, use_branch1=True, **bn_param)
+    ResBody(net, 'res2a', '2b', out=64, stride=1, **bn_param)
+
+    # Conv3_x
+    ResBody(net, 'res2b', '3a', out=128, stride=2, use_branch1=True, **bn_param)
+    from_layer = 'res3a'
+    for i in range(1, 2):
+      block_name = '3b{}'.format(i)
+      ResBody(net, from_layer, block_name, out=128, stride=1, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    # Conv4_x
+    ResBody(net, from_layer, '4a', out=256, stride=2, use_branch1=True, **bn_param)
+    from_layer = 'res4a'
+    for i in range(1, 2):
+      block_name = '4b{}'.format(i)
+      ResBody(net, from_layer, block_name, out=256, stride=1, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    stride = 2
+    dilation = 1
+    if use_dilation_conv5:
+      stride = 1
+      dilation = 2
+
+    # Conv5_x
+    ResBody(net, from_layer, '5a', out=512, stride=stride, dilation=dilation, use_branch1=True, **bn_param)
+    ResBody(net, 'res5a', '5b', out=512, stride=1, dilation=dilation, **bn_param)
+
+    if use_pool5:
+      net.pool5 = L.Pooling(net.res5b, pool=P.Pooling.AVE, global_pooling=True)
+
+    return net
+
+def ResNet34Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn_param):
+    conv_prefix = ''
+    conv_postfix = ''
+    bn_prefix = 'bn_'
+    bn_postfix = ''
+    scale_prefix = 'scale_'
+    scale_postfix = ''
+    ConvBNLayer(net, from_layer, 'conv1', use_bn=True, use_relu=True,
+        num_output=64, kernel_size=7, pad=3, stride=2,
+        conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+
+    net.pool1 = L.Pooling(net.conv1, pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+    # Conv2_x, no downsampling
+    ResBody(net, 'pool1', '2a', out=64, stride=1, use_branch1=True, **bn_param)
+    ResBody(net, 'res2a', '2b', out=64, stride=1, **bn_param)
+    ResBody(net, 'res2b', '2c', out=64, stride=1, **bn_param)
+
+    # Conv3_x
+    ResBody(net, 'res2c', '3a', out=128, stride=2, use_branch1=True, **bn_param)
+    from_layer = 'res3a'
+    for i in range(1, 4):
+      block_name = '3b{}'.format(i)
+      ResBody(net, from_layer, block_name, out=128, stride=1, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    # Conv4_x
+    ResBody(net, from_layer, '4a', out=256, stride=2, use_branch1=True, **bn_param)
+    from_layer = 'res4a'
+    for i in range(1, 6):
+      block_name = '4b{}'.format(i)
+      ResBody(net, from_layer, block_name, out=256, stride=1, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    stride = 2
+    dilation = 1
+    if use_dilation_conv5:
+      stride = 1
+      dilation = 2
+
+    # Conv5_x
+    ResBody(net, from_layer, '5a', out=512, stride=stride, dilation=dilation, use_branch1=True, **bn_param)
+    ResBody(net, 'res5a', '5b', out=512, stride=1, dilation=dilation, **bn_param)
+    ResBody(net, 'res5b', '5c', out=512, stride=1, dilation=dilation, **bn_param)
+
+    if use_pool5:
+      net.pool5 = L.Pooling(net.res5b, pool=P.Pooling.AVE, global_pooling=True)
+
+    return net
+
+def ResNet50Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn_param):
+    conv_prefix = ''
+    conv_postfix = ''
+    bn_prefix = 'bn_'
+    bn_postfix = ''
+    scale_prefix = 'scale_'
+    scale_postfix = ''
+    ConvBNLayer(net, from_layer, 'conv1', use_bn=True, use_relu=True,
+        num_output=64, kernel_size=7, pad=3, stride=2,
+        conv_prefix=conv_prefix, conv_postfix=conv_postfix,
+        bn_prefix=bn_prefix, bn_postfix=bn_postfix,
+        scale_prefix=scale_prefix, scale_postfix=scale_postfix, **bn_param)
+
+    net.pool1 = L.Pooling(net.conv1, pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+    ResBottleneckBody(net, 'pool1', '2a', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, 'res2a', '2b', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+    ResBottleneckBody(net, 'res2b', '2c', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+
+    ResBottleneckBody(net, 'res2c', '3a', out2a=128, out2b=128, out2c=512, stride=2, use_branch1=True, **bn_param)
+
+    from_layer = 'res3a'
+    for i in range(1, 4):
+      block_name = '3b{}'.format(i)
+      ResBottleneckBody(net, from_layer, block_name, out2a=128, out2b=128, out2c=512, stride=1, use_branch1=False, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    ResBottleneckBody(net, from_layer, '4a', out2a=256, out2b=256, out2c=1024, stride=2, use_branch1=True, **bn_param)
+
+    from_layer = 'res4a'
+    for i in range(1, 6):
+      block_name = '4b{}'.format(i)
+      ResBottleneckBody(net, from_layer, block_name, out2a=256, out2b=256, out2c=1024, stride=1, use_branch1=False, **bn_param)
+      from_layer = 'res{}'.format(block_name)
+
+    stride = 2
+    dilation = 1
+    if use_dilation_conv5:
+      stride = 1
+      dilation = 2
+
+    ResBottleneckBody(net, from_layer, '5a', out2a=512, out2b=512, out2c=2048, stride=stride, use_branch1=True, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5a', '5b', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5b', '5c', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+
+    if use_pool5:
+      net.pool5 = L.Pooling(net.res5c, pool=P.Pooling.AVE, global_pooling=True)
+
+    return net
+
 def ResNet101Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn_param):
     conv_prefix = ''
     conv_postfix = ''
@@ -668,24 +868,24 @@ def ResNet101Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **b
 
     net.pool1 = L.Pooling(net.conv1, pool=P.Pooling.MAX, kernel_size=3, stride=2)
 
-    ResBody(net, 'pool1', '2a', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=True, **bn_param)
-    ResBody(net, 'res2a', '2b', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
-    ResBody(net, 'res2b', '2c', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+    ResBottleneckBody(net, 'pool1', '2a', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, 'res2a', '2b', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+    ResBottleneckBody(net, 'res2b', '2c', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
 
-    ResBody(net, 'res2c', '3a', out2a=128, out2b=128, out2c=512, stride=2, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, 'res2c', '3a', out2a=128, out2b=128, out2c=512, stride=2, use_branch1=True, **bn_param)
 
     from_layer = 'res3a'
     for i in range(1, 4):
       block_name = '3b{}'.format(i)
-      ResBody(net, from_layer, block_name, out2a=128, out2b=128, out2c=512, stride=1, use_branch1=False, **bn_param)
+      ResBottleneckBody(net, from_layer, block_name, out2a=128, out2b=128, out2c=512, stride=1, use_branch1=False, **bn_param)
       from_layer = 'res{}'.format(block_name)
 
-    ResBody(net, from_layer, '4a', out2a=256, out2b=256, out2c=1024, stride=2, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, from_layer, '4a', out2a=256, out2b=256, out2c=1024, stride=2, use_branch1=True, **bn_param)
 
     from_layer = 'res4a'
     for i in range(1, 23):
       block_name = '4b{}'.format(i)
-      ResBody(net, from_layer, block_name, out2a=256, out2b=256, out2c=1024, stride=1, use_branch1=False, **bn_param)
+      ResBottleneckBody(net, from_layer, block_name, out2a=256, out2b=256, out2c=1024, stride=1, use_branch1=False, **bn_param)
       from_layer = 'res{}'.format(block_name)
 
     stride = 2
@@ -694,9 +894,9 @@ def ResNet101Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **b
       stride = 1
       dilation = 2
 
-    ResBody(net, from_layer, '5a', out2a=512, out2b=512, out2c=2048, stride=stride, use_branch1=True, dilation=dilation, **bn_param)
-    ResBody(net, 'res5a', '5b', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
-    ResBody(net, 'res5b', '5c', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, from_layer, '5a', out2a=512, out2b=512, out2c=2048, stride=stride, use_branch1=True, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5a', '5b', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5b', '5c', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
 
     if use_pool5:
       net.pool5 = L.Pooling(net.res5c, pool=P.Pooling.AVE, global_pooling=True)
@@ -718,24 +918,24 @@ def ResNet152Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **b
 
     net.pool1 = L.Pooling(net.conv1, pool=P.Pooling.MAX, kernel_size=3, stride=2)
 
-    ResBody(net, 'pool1', '2a', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=True, **bn_param)
-    ResBody(net, 'res2a', '2b', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
-    ResBody(net, 'res2b', '2c', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+    ResBottleneckBody(net, 'pool1', '2a', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, 'res2a', '2b', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
+    ResBottleneckBody(net, 'res2b', '2c', out2a=64, out2b=64, out2c=256, stride=1, use_branch1=False, **bn_param)
 
-    ResBody(net, 'res2c', '3a', out2a=128, out2b=128, out2c=512, stride=2, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, 'res2c', '3a', out2a=128, out2b=128, out2c=512, stride=2, use_branch1=True, **bn_param)
 
     from_layer = 'res3a'
     for i in range(1, 8):
       block_name = '3b{}'.format(i)
-      ResBody(net, from_layer, block_name, out2a=128, out2b=128, out2c=512, stride=1, use_branch1=False, **bn_param)
+      ResBottleneckBody(net, from_layer, block_name, out2a=128, out2b=128, out2c=512, stride=1, use_branch1=False, **bn_param)
       from_layer = 'res{}'.format(block_name)
 
-    ResBody(net, from_layer, '4a', out2a=256, out2b=256, out2c=1024, stride=2, use_branch1=True, **bn_param)
+    ResBottleneckBody(net, from_layer, '4a', out2a=256, out2b=256, out2c=1024, stride=2, use_branch1=True, **bn_param)
 
     from_layer = 'res4a'
     for i in range(1, 36):
       block_name = '4b{}'.format(i)
-      ResBody(net, from_layer, block_name, out2a=256, out2b=256, out2c=1024, stride=1, use_branch1=False, **bn_param)
+      ResBottleneckBody(net, from_layer, block_name, out2a=256, out2b=256, out2c=1024, stride=1, use_branch1=False, **bn_param)
       from_layer = 'res{}'.format(block_name)
 
     stride = 2
@@ -744,9 +944,9 @@ def ResNet152Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **b
       stride = 1
       dilation = 2
 
-    ResBody(net, from_layer, '5a', out2a=512, out2b=512, out2c=2048, stride=stride, use_branch1=True, dilation=dilation, **bn_param)
-    ResBody(net, 'res5a', '5b', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
-    ResBody(net, 'res5b', '5c', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, from_layer, '5a', out2a=512, out2b=512, out2c=2048, stride=stride, use_branch1=True, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5a', '5b', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
+    ResBottleneckBody(net, 'res5b', '5c', out2a=512, out2b=512, out2c=2048, stride=1, use_branch1=False, dilation=dilation, **bn_param)
 
     if use_pool5:
       net.pool5 = L.Pooling(net.res5c, pool=P.Pooling.AVE, global_pooling=True)

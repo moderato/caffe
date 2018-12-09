@@ -235,7 +235,7 @@ mbox_layer_num = 6
 square = True
 
 # The job name should be same as the name used in examples/ssd/ssd_gtsdb.py.
-job_name = "SSD_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, mbox_layer_num, square)
+job_name = "SSD_{}_{}_{}_{}".format(resize, nms_top_k, top_k, 'Square' if square else 'Non-square')
 # The name of the model. Modify it if you want.
 model_name = "VGG_GTSDB_{}".format(job_name)
 
@@ -364,8 +364,8 @@ gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
 # The number does not matter since we do not do training with this script.
-batch_size = 1
-accum_batch_size = 1
+batch_size = 2
+accum_batch_size = 2
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
 device_id = 0
@@ -387,7 +387,7 @@ elif normalization_mode == P.Loss.FULL:
 
 # Evaluate on whole test set.
 num_test_image = 153 # 153
-test_batch_size = 4
+test_batch_size = 1
 # Ideally test_batch_size should be divisible by num_test_image,
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))

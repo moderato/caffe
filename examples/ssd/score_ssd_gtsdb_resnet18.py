@@ -1,8 +1,4 @@
 from __future__ import print_function
-import caffe
-from caffe.model_libs import *
-from google.protobuf import text_format
-
 import math
 import os
 import shutil
@@ -10,103 +6,47 @@ import stat
 import subprocess
 import sys
 
-# Add extra layers on top of a "base" network (e.g. VGGNet or Inception or MobileNet).
-def AddExtraLayers(net, use_batchnorm=True, lr_mult=1):
+# os.environ['GLOG_minloglevel'] = '1'
+
+import caffe
+from caffe.model_libs import *
+import google.protobuf as pb
+from google.protobuf import text_format
+
+# Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
+def AddExtraLayers(net, use_batchnorm=True):
     use_relu = True
 
     # Add additional convolutional layers.
     # 19 x 19
-    from_layer = net.keys()[-1]
+    last_layer = net.keys()[-1]
 
-    # TODO(weiliu89): Construct the name using the last layer to avoid duplication.
     # 10 x 10
-    out_layer = "ssd1_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1,
-        lr_mult=lr_mult)
-
+    from_layer = last_layer
+    out_layer = "{}/conv1_1".format(last_layer)
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1)
     from_layer = out_layer
-    out_layer = "ssd1_2"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2,
-        lr_mult=lr_mult)
 
-    # 5 x 5
+    out_layer = "{}/conv1_2".format(last_layer)
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2)
     from_layer = out_layer
-    out_layer = "ssd2_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
-      lr_mult=lr_mult)
 
-    from_layer = out_layer
-    out_layer = "ssd2_2"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
-      lr_mult=lr_mult)
+    for i in range(2, 4):
+      out_layer = "{}/conv{}_1".format(last_layer, i)
+      ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1)
+      from_layer = out_layer
 
-    # 3 x 3
-    from_layer = out_layer
-    out_layer = "ssd3_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
-      lr_mult=lr_mult)
+      out_layer = "{}/conv{}_2".format(last_layer, i)
+      ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2)
+      from_layer = out_layer
 
-    from_layer = out_layer
-    out_layer = "ssd3_2"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
-      lr_mult=lr_mult)
-
-    # 1 x 1
-    from_layer = out_layer
-    out_layer = "ssd4_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
-      lr_mult=lr_mult)
-
-    from_layer = out_layer
-    out_layer = "ssd4_2"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
-      lr_mult=lr_mult)
+    # Add global pooling layer.
+    name = net.keys()[-1]
+    net.pool6 = L.Pooling(net[name], pool=P.Pooling.AVE, global_pooling=True)
 
     return net
-
-def AddExtraLayersLite(net, use_batchnorm=True, lr_mult=1, alpha=1):
-    use_relu = True
-
-    # Add additional convolutional layers.
-    # 10 x 10
-    from_layer = net.keys()[-1]
-    out_layer = "conv7_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*256, 1, 0, 1,
-        lr_mult=lr_mult)
-
-    DepthwiseBlock(net, alpha*256, alpha*512, 2, '7_2', use_batchnorm=use_batchnorm)
-
-    # 5 x 5
-    from_layer = net.keys()[-1]
-    out_layer = "conv8_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
-      lr_mult=lr_mult)
-
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '8_2', use_batchnorm=use_batchnorm)
-
-    # 3 x 3
-    from_layer = net.keys()[-1]
-    out_layer = "conv9_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*128, 1, 0, 1,
-      lr_mult=lr_mult)
-
-    DepthwiseBlock(net, alpha*128, alpha*256, 2, '9_2', use_batchnorm=use_batchnorm)
-
-    # 1 x 1
-    from_layer = net.keys()[-1]
-    out_layer = "conv10_1"
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, alpha*64, 1, 0, 1,
-      lr_mult=lr_mult)
-
-    DepthwiseBlock(net, alpha*64, alpha*128, 2, '10_2', use_batchnorm=use_batchnorm)
-
-    return net
-
 
 ### Modify the following parameters accordingly ###
-# Notice: we do evaluation by setting the solver parameters approximately.
-# The reason that we do not use ./build/tools/caffe test ... is because it
-# only supports testing for classification problem now.
 # The directory which contains the caffe code.
 # We assume you are running the script at the CAFFE_ROOT.
 caffe_root = os.getcwd()
@@ -210,7 +150,7 @@ batch_sampler = [
         ]
 train_transform_param = {
         'mirror': True,
-        'mean_value': [125, 127, 130],
+        'mean_value': [130, 127, 125],
         'resize_param': {
                 'prob': 1,
                 'resize_mode': P.Resize.WARP,
@@ -246,7 +186,7 @@ train_transform_param = {
             }
         }
 test_transform_param = {
-        'mean_value': [125, 127, 130],
+        'mean_value': [130, 127, 125],
         'resize_param': {
                 'prob': 1,
                 'resize_mode': P.Resize.WARP,
@@ -259,31 +199,30 @@ test_transform_param = {
 # If true, use batch norm for all newly added layers.
 # Currently only the non batch norm version has been tested.
 use_batchnorm = False
-lr_mult = 1
 # Use different initial learning rate.
 if use_batchnorm:
     base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 2e-5
+    # base_lr = 1e-6
+    base_lr = 4e-5
 
 nms_top_k = 100
 top_k = 40
 square = True
 alpha = 1
-Lite = True
 
 # Modify the job name if you want.
-job_name = "SSD{}_{}_{}_{}_{}_{}".format("Lite" if Lite else "", resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
+job_name = "SSD_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
-model_name = "MobileNetV2_GTSDB_{}".format(job_name)
+model_name = "ResNet18_GTSDB_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/MobileNetV2/GTSDB/{}".format(job_name)
+save_dir = "models/ResNet18/GTSDB/{}".format(job_name)
 # Directory which stores the snapshot of models.
-snapshot_dir = "models/MobileNetV2/GTSDB/{}".format(job_name)
+snapshot_dir = "models/ResNet18/GTSDB/{}".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/MobileNetV2/GTSDB/{}".format(job_name)
+job_dir = "jobs/ResNet18/GTSDB/{}".format(job_name)
 # Directory which stores the detection results.
 output_result_dir = "{}/Documents/data/GTSDBdevkit/results/GTSDB/{}/Main".format(os.environ['HOME'], job_name)
 
@@ -312,15 +251,15 @@ if max_iter == 0:
 
 # Stores the test image names and sizes. Created by data/GTSDB/create_list.sh
 name_size_file = "data/GTSDB/test_name_size.txt"
-# The resume model.
-pretrain_model = "{}_iter_{}.caffemodel".format(snapshot_prefix, max_iter)
+# The pretrained model. We use ResNet18.
+pretrain_model = "models/ResNet18/resnet18.caffemodel"
 # Stores LabelMapItem.
 label_map_file = "data/GTSDB/labelmap_GTSDB.prototxt"
 
 # MultiBoxLoss parameters.
 num_classes = 5
 share_location = True
-background_label_id=0
+background_label_id = 0
 train_on_diff_gt = True
 normalization_mode = P.Loss.VALID
 code_type = P.PriorBox.CENTER_SIZE
@@ -352,21 +291,17 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# conv5_3/sep ==> 19 x 19
-# conv6_4/sep ==> 10 x 10
-# ssd1_2 ==> 5 x 5
-# ssd2_2 ==> 3 x 3
-# ssd3_2 ==> 2 x 2
-# ssd4_2 ==> 1 x 1
+# res3b3_relu ==> 38 x 38
+# res5c_relu ==> 19 x 19
+# res5c_relu/conv1_2 ==> 10 x 10
+# res5c_relu/conv2_2 ==> 5 x 5
+# res5c_relu/conv3_2 ==> 3 x 3
+# pool6 ==> 1 x 1
 
-if Lite:
-    mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'conv7_2/sep', 'conv8_2/sep', 'conv9_2/sep', 'conv10_2/sep']
-else:
-    mbox_source_layers = ['conv5_3/expand', 'conv6_4', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
-
+mbox_source_layers = ['res3b1_relu', 'res5b_relu', 'res5b_relu/conv1_2', 'res5b_relu/conv2_2', 'res5b_relu/conv3_2', 'pool6']
 # in percent %
 min_ratio = 20
-max_ratio = 90
+max_ratio = 95
 step = int(math.floor((max_ratio - min_ratio) / (len(mbox_source_layers) - 2)))
 min_sizes = []
 max_sizes = []
@@ -374,17 +309,11 @@ for ratio in range(min_ratio, max_ratio + 1, step):
   min_sizes.append(min_dim * ratio / 100.)
   max_sizes.append(min_dim * (ratio + step) / 100.)
 min_sizes = [min_dim * 10 / 100.] + min_sizes
-max_sizes = [min_dim * 20 / 100.] + max_sizes
-
-steps = [16, 32, 64, 100, 150, 300]
-
+max_sizes = [[]] + max_sizes
 if square:
     aspect_ratios = [[]] * 6
 else:
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
-
-# L2 normalize conv5_3/sep.
-normalizations = [-1, -1, -1, -1, -1, -1]
 
 # variance used to encode/decode prior bboxes.
 if code_type == P.PriorBox.CENTER_SIZE:
@@ -400,9 +329,9 @@ gpus = "0"
 gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
-# The number does not matter since we do not do training with this script.
-batch_size = 1
-accum_batch_size = 1
+# Divide the mini-batch to different GPUs.
+batch_size = 2
+accum_batch_size = 2
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
 device_id = 0
@@ -429,58 +358,58 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
-if Lite:
-    solver_param = {
-        # Train parameters
-        'base_lr': base_lr,
-        'weight_decay': 0.00001,
-        'lr_policy': "multistep",
-        'stepvalue': [20000, 40000, 100000, 200000],
-        'gamma': 0.5,
-        'iter_size': iter_size,
-        'max_iter': 0,
-        'snapshot': 0,
-        'display': 10,
-        'average_loss': 10,
-        'type': "RMSProp",
-        'solver_mode': solver_mode,
-        'device_id': device_id,
-        'debug_info': False,
-        'snapshot_after_train': False,
-        # Test parameters
-        'test_iter': [test_iter],
-        'test_interval': 10000,
-        'eval_type': "detection",
-        'ap_version': "11point",
-        'test_initialization': True,
-        # 'show_per_class_result': True,
-        }
-else:
-    solver_param = {
-        # Train parameters
-        'base_lr': base_lr,
-        'weight_decay': 0.00001,
-        'lr_policy': "multistep",
-        'stepvalue': [20000, 40000, 50000],
-        'gamma': 0.5,
-        'iter_size': iter_size,
-        'max_iter': 0,
-        'snapshot': 0,
-        'display': 10,
-        'average_loss': 10,
-        'type': "RMSProp",
-        'solver_mode': solver_mode,
-        'device_id': device_id,
-        'debug_info': False,
-        'snapshot_after_train': False,
-        # Test parameters
-        'test_iter': [test_iter],
-        'test_interval': 10000,
-        'eval_type': "detection",
-        'ap_version': "11point",
-        'test_initialization': True,
-        # 'show_per_class_result': True,
-        }
+# solver_param = {
+#     # Train parameters
+#     'base_lr': base_lr,
+#     'weight_decay': 0.0005,
+#     'lr_policy': "multistep",
+#     'stepvalue': [20000, 40000, 60000],
+#     'gamma': 0.5,
+#     'iter_size': iter_size,
+#     'max_iter': 80000,
+#     'snapshot': 50000,
+#     'display': 10,
+#     'average_loss': 10,
+#     'type': "RMSProp",
+#     'solver_mode': solver_mode,
+#     'device_id': device_id,
+#     'debug_info': False,
+#     'snapshot_after_train': True,
+#     # Test parameters
+#     'test_iter': [test_iter],
+#     'test_interval': 2000,
+#     'eval_type': "detection",
+#     'ap_version': "MaxIntegral",
+#     'test_initialization': False,
+#     # 'show_per_class_result': True,
+#     }
+
+solver_param = {
+    # Train parameters
+    'base_lr': base_lr,
+    'weight_decay': 0.0005,
+    'lr_policy': "multistep",
+    'stepvalue': [40000, 60000],
+    'gamma': 0.1,
+    'momentum': 0.9,
+    'iter_size': iter_size,
+    'max_iter': 0,
+    'snapshot': 0,
+    'display': 10,
+    'average_loss': 10,
+    'type': "SGD",
+    'solver_mode': solver_mode,
+    'device_id': device_id,
+    'debug_info': False,
+    'snapshot_after_train': True,
+    # Test parameters
+    'test_iter': [test_iter],
+    'test_interval': 2000,
+    'eval_type': "detection",
+    'ap_version': "MaxIntegral",
+    'test_initialization': False,
+    # 'show_per_class_result': True,
+    }
 
 # parameters for generating detection output.
 det_out_param = {
@@ -526,19 +455,18 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
+ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
+# with open('net2.prototxt', 'w') as f:
+#     print(net.to_proto(), file=f)
+# exit(0)
 
-if Lite:
-    AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
-else:
-    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+AddExtraLayers(net, use_batchnorm=True)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, 
-        min_sizes=min_sizes, max_sizes=max_sizes,
-        aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
-        num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
-        prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
+        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        aspect_ratios=aspect_ratios, num_classes=num_classes, 
+        share_location=share_location, flip=flip, clip=clip,
+        prior_variance=prior_variance, kernel_size=3, pad=1)
 
 # Create the MultiBoxLossLayer.
 name = "mbox_loss"
@@ -558,19 +486,15 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-MobileNetV2Body(net, from_layer='data', alpha=alpha, ssd=True)
+ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
 
-if Lite:
-    AddExtraLayersLite(net, use_batchnorm, lr_mult=lr_mult, alpha=alpha)
-else:
-    AddExtraLayers(net, use_batchnorm, lr_mult=lr_mult)
+AddExtraLayers(net, use_batchnorm=True)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, 
-        min_sizes=min_sizes, max_sizes=max_sizes,
-        aspect_ratios=aspect_ratios, steps=steps, normalizations=normalizations,
-        num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
-        prior_variance=prior_variance, kernel_size=3, pad=1, lr_mult=lr_mult)
+        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes, 
+        aspect_ratios=aspect_ratios, num_classes=num_classes, 
+        share_location=share_location, flip=flip, clip=clip,
+        prior_variance=prior_variance, kernel_size=3, pad=1)
 
 conf_name = "mbox_conf"
 if multibox_loss_param["conf_loss_type"] == P.MultiBoxLoss.SOFTMAX:
