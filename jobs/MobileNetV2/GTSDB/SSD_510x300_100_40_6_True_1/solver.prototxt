@@ -1,0 +1,26 @@
+train_net: "models/MobileNetV2/GTSDB/SSD_510x300_100_40_6_True_1/train.prototxt"
+test_net: "models/MobileNetV2/GTSDB/SSD_510x300_100_40_6_True_1/test.prototxt"
+test_iter: 153
+test_interval: 10000
+base_lr: 0.0005000000237487257
+display: 10
+max_iter: 0
+lr_policy: "multistep"
+gamma: 0.5
+weight_decay: 9.999999747378752e-06
+snapshot: 0
+snapshot_prefix: "models/MobileNetV2/GTSDB/SSD_510x300_100_40_6_True_1/MobileNetV2_GTSDB_SSD_510x300_100_40_6_True_1"
+solver_mode: GPU
+device_id: 0
+debug_info: false
+snapshot_after_train: false
+test_initialization: true
+average_loss: 10
+stepvalue: 20000
+stepvalue: 40000
+stepvalue: 50000
+iter_size: 1
+type: "RMSProp"
+eval_type: "detection"
+ap_version: "11point"
+

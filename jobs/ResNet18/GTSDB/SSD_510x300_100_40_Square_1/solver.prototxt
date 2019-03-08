@@ -1,0 +1,26 @@
+train_net: "models/ResNet18/GTSDB/SSD_510x300_100_40_Square_1/train.prototxt"
+test_net: "models/ResNet18/GTSDB/SSD_510x300_100_40_Square_1/test.prototxt"
+test_iter: 153
+test_interval: 2000
+base_lr: 0.0010000000474974513
+display: 10
+max_iter: 80000
+lr_policy: "multistep"
+gamma: 0.10000000149011612
+momentum: 0.8999999761581421
+weight_decay: 0.0005000000237487257
+snapshot: 40000
+snapshot_prefix: "models/ResNet18/GTSDB/SSD_510x300_100_40_Square_1/ResNet18_GTSDB_SSD_510x300_100_40_Square_1"
+solver_mode: GPU
+device_id: 0
+debug_info: false
+snapshot_after_train: true
+test_initialization: false
+average_loss: 10
+stepvalue: 40000
+stepvalue: 60000
+iter_size: 1
+type: "SGD"
+eval_type: "detection"
+ap_version: "MaxIntegral"
+

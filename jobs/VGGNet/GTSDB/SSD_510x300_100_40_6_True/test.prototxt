@@ -1,0 +1,1655 @@
+name: "VGG_GTSDB_SSD_510x300_100_40_6_True_test"
+layer {
+  name: "data"
+  type: "AnnotatedData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    mean_value: 130.0
+    mean_value: 127.0
+    mean_value: 125.0
+    resize_param {
+      prob: 1.0
+      resize_mode: WARP
+      height: 300
+      width: 510
+      interp_mode: LINEAR
+    }
+  }
+  data_param {
+    source: "examples/GTSDB/GTSDB_test_lmdb"
+    batch_size: 1
+    backend: LMDB
+  }
+  annotated_data_param {
+    batch_sampler {
+    }
+    label_map_file: "data/GTSDB/labelmap_GTSDB.prototxt"
+  }
+}
+layer {
+  name: "conv1_1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu1_1"
+  type: "ReLU"
+  bottom: "conv1_1"
+  top: "conv1_1"
+}
+layer {
+  name: "conv1_2"
+  type: "Convolution"
+  bottom: "conv1_1"
+  top: "conv1_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu1_2"
+  type: "ReLU"
+  bottom: "conv1_2"
+  top: "conv1_2"
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1_2"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv2_1"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu2_1"
+  type: "ReLU"
+  bottom: "conv2_1"
+  top: "conv2_1"
+}
+layer {
+  name: "conv2_2"
+  type: "Convolution"
+  bottom: "conv2_1"
+  top: "conv2_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu2_2"
+  type: "ReLU"
+  bottom: "conv2_2"
+  top: "conv2_2"
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "conv2_2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv3_1"
+  type: "Convolution"
+  bottom: "pool2"
+  top: "conv3_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu3_1"
+  type: "ReLU"
+  bottom: "conv3_1"
+  top: "conv3_1"
+}
+layer {
+  name: "conv3_2"
+  type: "Convolution"
+  bottom: "conv3_1"
+  top: "conv3_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu3_2"
+  type: "ReLU"
+  bottom: "conv3_2"
+  top: "conv3_2"
+}
+layer {
+  name: "conv3_3"
+  type: "Convolution"
+  bottom: "conv3_2"
+  top: "conv3_3"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu3_3"
+  type: "ReLU"
+  bottom: "conv3_3"
+  top: "conv3_3"
+}
+layer {
+  name: "pool3"
+  type: "Pooling"
+  bottom: "conv3_3"
+  top: "pool3"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv4_1"
+  type: "Convolution"
+  bottom: "pool3"
+  top: "conv4_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu4_1"
+  type: "ReLU"
+  bottom: "conv4_1"
+  top: "conv4_1"
+}
+layer {
+  name: "conv4_2"
+  type: "Convolution"
+  bottom: "conv4_1"
+  top: "conv4_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu4_2"
+  type: "ReLU"
+  bottom: "conv4_2"
+  top: "conv4_2"
+}
+layer {
+  name: "conv4_3"
+  type: "Convolution"
+  bottom: "conv4_2"
+  top: "conv4_3"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu4_3"
+  type: "ReLU"
+  bottom: "conv4_3"
+  top: "conv4_3"
+}
+layer {
+  name: "pool4"
+  type: "Pooling"
+  bottom: "conv4_3"
+  top: "pool4"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv5_1"
+  type: "Convolution"
+  bottom: "pool4"
+  top: "conv5_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+    dilation: 1
+  }
+}
+layer {
+  name: "relu5_1"
+  type: "ReLU"
+  bottom: "conv5_1"
+  top: "conv5_1"
+}
+layer {
+  name: "conv5_2"
+  type: "Convolution"
+  bottom: "conv5_1"
+  top: "conv5_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+    dilation: 1
+  }
+}
+layer {
+  name: "relu5_2"
+  type: "ReLU"
+  bottom: "conv5_2"
+  top: "conv5_2"
+}
+layer {
+  name: "conv5_3"
+  type: "Convolution"
+  bottom: "conv5_2"
+  top: "conv5_3"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+    dilation: 1
+  }
+}
+layer {
+  name: "relu5_3"
+  type: "ReLU"
+  bottom: "conv5_3"
+  top: "conv5_3"
+}
+layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "conv5_3"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 1
+    pad: 1
+  }
+}
+layer {
+  name: "fc6"
+  type: "Convolution"
+  bottom: "pool5"
+  top: "fc6"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 1024
+    pad: 6
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+    dilation: 6
+  }
+}
+layer {
+  name: "relu6"
+  type: "ReLU"
+  bottom: "fc6"
+  top: "fc6"
+}
+layer {
+  name: "fc7"
+  type: "Convolution"
+  bottom: "fc6"
+  top: "fc7"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 1024
+    kernel_size: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "relu7"
+  type: "ReLU"
+  bottom: "fc7"
+  top: "fc7"
+}
+layer {
+  name: "ssd1_1"
+  type: "Convolution"
+  bottom: "fc7"
+  top: "ssd1_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd1_1_relu"
+  type: "ReLU"
+  bottom: "ssd1_1"
+  top: "ssd1_1"
+}
+layer {
+  name: "ssd1_2"
+  type: "Convolution"
+  bottom: "ssd1_1"
+  top: "ssd1_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd1_2_relu"
+  type: "ReLU"
+  bottom: "ssd1_2"
+  top: "ssd1_2"
+}
+layer {
+  name: "ssd2_1"
+  type: "Convolution"
+  bottom: "ssd1_2"
+  top: "ssd2_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd2_1_relu"
+  type: "ReLU"
+  bottom: "ssd2_1"
+  top: "ssd2_1"
+}
+layer {
+  name: "ssd2_2"
+  type: "Convolution"
+  bottom: "ssd2_1"
+  top: "ssd2_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    stride: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd2_2_relu"
+  type: "ReLU"
+  bottom: "ssd2_2"
+  top: "ssd2_2"
+}
+layer {
+  name: "ssd3_1"
+  type: "Convolution"
+  bottom: "ssd2_2"
+  top: "ssd3_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd3_1_relu"
+  type: "ReLU"
+  bottom: "ssd3_1"
+  top: "ssd3_1"
+}
+layer {
+  name: "ssd3_2"
+  type: "Convolution"
+  bottom: "ssd3_1"
+  top: "ssd3_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 0
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd3_2_relu"
+  type: "ReLU"
+  bottom: "ssd3_2"
+  top: "ssd3_2"
+}
+layer {
+  name: "ssd4_1"
+  type: "Convolution"
+  bottom: "ssd3_2"
+  top: "ssd4_1"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 0
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd4_1_relu"
+  type: "ReLU"
+  bottom: "ssd4_1"
+  top: "ssd4_1"
+}
+layer {
+  name: "ssd4_2"
+  type: "Convolution"
+  bottom: "ssd4_1"
+  top: "ssd4_2"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 0
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd4_2_relu"
+  type: "ReLU"
+  bottom: "ssd4_2"
+  top: "ssd4_2"
+}
+layer {
+  name: "conv4_3_norm"
+  type: "Normalize"
+  bottom: "conv4_3"
+  top: "conv4_3_norm"
+  norm_param {
+    across_spatial: false
+    scale_filler {
+      type: "constant"
+      value: 20.0
+    }
+    channel_shared: false
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_loc"
+  type: "Convolution"
+  bottom: "conv4_3_norm"
+  top: "conv4_3_norm_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_loc_perm"
+  type: "Permute"
+  bottom: "conv4_3_norm_mbox_loc"
+  top: "conv4_3_norm_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "conv4_3_norm_mbox_loc_perm"
+  top: "conv4_3_norm_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_conf"
+  type: "Convolution"
+  bottom: "conv4_3_norm"
+  top: "conv4_3_norm_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_conf_perm"
+  type: "Permute"
+  bottom: "conv4_3_norm_mbox_conf"
+  top: "conv4_3_norm_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "conv4_3_norm_mbox_conf_perm"
+  top: "conv4_3_norm_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "conv4_3_norm_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "conv4_3_norm"
+  bottom: "data"
+  top: "conv4_3_norm_mbox_priorbox"
+  prior_box_param {
+    min_size: 15.0
+    max_size: 30.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 8.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "fc7_mbox_loc"
+  type: "Convolution"
+  bottom: "fc7"
+  top: "fc7_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "fc7_mbox_loc_perm"
+  type: "Permute"
+  bottom: "fc7_mbox_loc"
+  top: "fc7_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "fc7_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "fc7_mbox_loc_perm"
+  top: "fc7_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "fc7_mbox_conf"
+  type: "Convolution"
+  bottom: "fc7"
+  top: "fc7_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "fc7_mbox_conf_perm"
+  type: "Permute"
+  bottom: "fc7_mbox_conf"
+  top: "fc7_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "fc7_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "fc7_mbox_conf_perm"
+  top: "fc7_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "fc7_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "fc7"
+  bottom: "data"
+  top: "fc7_mbox_priorbox"
+  prior_box_param {
+    min_size: 30.0
+    max_size: 60.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 16.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "ssd1_2_mbox_loc"
+  type: "Convolution"
+  bottom: "ssd1_2"
+  top: "ssd1_2_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd1_2_mbox_loc_perm"
+  type: "Permute"
+  bottom: "ssd1_2_mbox_loc"
+  top: "ssd1_2_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd1_2_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "ssd1_2_mbox_loc_perm"
+  top: "ssd1_2_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd1_2_mbox_conf"
+  type: "Convolution"
+  bottom: "ssd1_2"
+  top: "ssd1_2_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd1_2_mbox_conf_perm"
+  type: "Permute"
+  bottom: "ssd1_2_mbox_conf"
+  top: "ssd1_2_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd1_2_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "ssd1_2_mbox_conf_perm"
+  top: "ssd1_2_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd1_2_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "ssd1_2"
+  bottom: "data"
+  top: "ssd1_2_mbox_priorbox"
+  prior_box_param {
+    min_size: 60.0
+    max_size: 90.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 32.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "ssd2_2_mbox_loc"
+  type: "Convolution"
+  bottom: "ssd2_2"
+  top: "ssd2_2_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd2_2_mbox_loc_perm"
+  type: "Permute"
+  bottom: "ssd2_2_mbox_loc"
+  top: "ssd2_2_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd2_2_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "ssd2_2_mbox_loc_perm"
+  top: "ssd2_2_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd2_2_mbox_conf"
+  type: "Convolution"
+  bottom: "ssd2_2"
+  top: "ssd2_2_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd2_2_mbox_conf_perm"
+  type: "Permute"
+  bottom: "ssd2_2_mbox_conf"
+  top: "ssd2_2_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd2_2_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "ssd2_2_mbox_conf_perm"
+  top: "ssd2_2_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd2_2_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "ssd2_2"
+  bottom: "data"
+  top: "ssd2_2_mbox_priorbox"
+  prior_box_param {
+    min_size: 90.0
+    max_size: 120.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 64.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "ssd3_2_mbox_loc"
+  type: "Convolution"
+  bottom: "ssd3_2"
+  top: "ssd3_2_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd3_2_mbox_loc_perm"
+  type: "Permute"
+  bottom: "ssd3_2_mbox_loc"
+  top: "ssd3_2_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd3_2_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "ssd3_2_mbox_loc_perm"
+  top: "ssd3_2_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd3_2_mbox_conf"
+  type: "Convolution"
+  bottom: "ssd3_2"
+  top: "ssd3_2_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd3_2_mbox_conf_perm"
+  type: "Permute"
+  bottom: "ssd3_2_mbox_conf"
+  top: "ssd3_2_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd3_2_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "ssd3_2_mbox_conf_perm"
+  top: "ssd3_2_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd3_2_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "ssd3_2"
+  bottom: "data"
+  top: "ssd3_2_mbox_priorbox"
+  prior_box_param {
+    min_size: 120.0
+    max_size: 150.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 100.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "ssd4_2_mbox_loc"
+  type: "Convolution"
+  bottom: "ssd4_2"
+  top: "ssd4_2_mbox_loc"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 8
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd4_2_mbox_loc_perm"
+  type: "Permute"
+  bottom: "ssd4_2_mbox_loc"
+  top: "ssd4_2_mbox_loc_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd4_2_mbox_loc_flat"
+  type: "Flatten"
+  bottom: "ssd4_2_mbox_loc_perm"
+  top: "ssd4_2_mbox_loc_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd4_2_mbox_conf"
+  type: "Convolution"
+  bottom: "ssd4_2"
+  top: "ssd4_2_mbox_conf"
+  param {
+    lr_mult: 1.0
+    decay_mult: 1.0
+  }
+  param {
+    lr_mult: 2.0
+    decay_mult: 0.0
+  }
+  convolution_param {
+    num_output: 10
+    pad: 1
+    kernel_size: 3
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.0
+    }
+  }
+}
+layer {
+  name: "ssd4_2_mbox_conf_perm"
+  type: "Permute"
+  bottom: "ssd4_2_mbox_conf"
+  top: "ssd4_2_mbox_conf_perm"
+  permute_param {
+    order: 0
+    order: 2
+    order: 3
+    order: 1
+  }
+}
+layer {
+  name: "ssd4_2_mbox_conf_flat"
+  type: "Flatten"
+  bottom: "ssd4_2_mbox_conf_perm"
+  top: "ssd4_2_mbox_conf_flat"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "ssd4_2_mbox_priorbox"
+  type: "PriorBox"
+  bottom: "ssd4_2"
+  bottom: "data"
+  top: "ssd4_2_mbox_priorbox"
+  prior_box_param {
+    min_size: 150.0
+    max_size: 180.0
+    clip: false
+    variance: 0.10000000149011612
+    variance: 0.10000000149011612
+    variance: 0.20000000298023224
+    variance: 0.20000000298023224
+    step: 300.0
+    offset: 0.5
+  }
+}
+layer {
+  name: "mbox_loc"
+  type: "Concat"
+  bottom: "conv4_3_norm_mbox_loc_flat"
+  bottom: "fc7_mbox_loc_flat"
+  bottom: "ssd1_2_mbox_loc_flat"
+  bottom: "ssd2_2_mbox_loc_flat"
+  bottom: "ssd3_2_mbox_loc_flat"
+  bottom: "ssd4_2_mbox_loc_flat"
+  top: "mbox_loc"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "mbox_conf"
+  type: "Concat"
+  bottom: "conv4_3_norm_mbox_conf_flat"
+  bottom: "fc7_mbox_conf_flat"
+  bottom: "ssd1_2_mbox_conf_flat"
+  bottom: "ssd2_2_mbox_conf_flat"
+  bottom: "ssd3_2_mbox_conf_flat"
+  bottom: "ssd4_2_mbox_conf_flat"
+  top: "mbox_conf"
+  concat_param {
+    axis: 1
+  }
+}
+layer {
+  name: "mbox_priorbox"
+  type: "Concat"
+  bottom: "conv4_3_norm_mbox_priorbox"
+  bottom: "fc7_mbox_priorbox"
+  bottom: "ssd1_2_mbox_priorbox"
+  bottom: "ssd2_2_mbox_priorbox"
+  bottom: "ssd3_2_mbox_priorbox"
+  bottom: "ssd4_2_mbox_priorbox"
+  top: "mbox_priorbox"
+  concat_param {
+    axis: 2
+  }
+}
+layer {
+  name: "mbox_conf_reshape"
+  type: "Reshape"
+  bottom: "mbox_conf"
+  top: "mbox_conf_reshape"
+  reshape_param {
+    shape {
+      dim: 0
+      dim: -1
+      dim: 5
+    }
+  }
+}
+layer {
+  name: "mbox_conf_softmax"
+  type: "Softmax"
+  bottom: "mbox_conf_reshape"
+  top: "mbox_conf_softmax"
+  softmax_param {
+    axis: 2
+  }
+}
+layer {
+  name: "mbox_conf_flatten"
+  type: "Flatten"
+  bottom: "mbox_conf_softmax"
+  top: "mbox_conf_flatten"
+  flatten_param {
+    axis: 1
+  }
+}
+layer {
+  name: "detection_out"
+  type: "DetectionOutput"
+  bottom: "mbox_loc"
+  bottom: "mbox_conf_flatten"
+  bottom: "mbox_priorbox"
+  top: "detection_out"
+  include {
+    phase: TEST
+  }
+  detection_output_param {
+    num_classes: 5
+    share_location: true
+    background_label_id: 0
+    nms_param {
+      nms_threshold: 0.44999998807907104
+      top_k: 100
+    }
+    save_output_param {
+      output_directory: "/home/zhongyilin/Documents/data/GTSDBdevkit/results/GTSDB/SSD_510x300_100_40_6_True/Main"
+      output_name_prefix: "comp4_det_test_"
+      output_format: "VOC"
+      label_map_file: "data/GTSDB/labelmap_GTSDB.prototxt"
+      name_size_file: "data/GTSDB/test_name_size.txt"
+      num_test_image: 153
+    }
+    code_type: CENTER_SIZE
+    keep_top_k: 40
+    confidence_threshold: 0.009999999776482582
+  }
+}
+layer {
+  name: "detection_eval"
+  type: "DetectionEvaluate"
+  bottom: "detection_out"
+  bottom: "label"
+  top: "detection_eval"
+  include {
+    phase: TEST
+  }
+  detection_evaluate_param {
+    num_classes: 5
+    background_label_id: 0
+    overlap_threshold: 0.5
+    evaluate_difficult_gt: false
+    name_size_file: "data/GTSDB/test_name_size.txt"
+  }
+}
+
