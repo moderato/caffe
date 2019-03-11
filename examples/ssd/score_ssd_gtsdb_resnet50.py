@@ -74,11 +74,6 @@ caffe_root = os.getcwd()
 
 # Set true if you want to start training right after generating all files.
 run_soon = True
-# Set true if you want to load from most recently saved snapshot.
-# Otherwise, we will load from the pretrain_model defined below.
-resume_training = False
-# If true, Remove old model files.
-remove_old_models = True
 
 # The database file for training data. Created by data/GTSDB/create_data.sh
 train_data = "examples/GTSDB/GTSDB_trainval_lmdb"
@@ -241,14 +236,14 @@ alpha = 1
 # Modify the job name if you want.
 job_name = "SSD_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
-model_name = "ResNet18_GTSDB_{}".format(job_name)
+model_name = "ResNet50_GTSDB_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/ResNet18/GTSDB/{}".format(job_name)
+save_dir = "models/ResNet50/GTSDB/{}".format(job_name)
 # Directory which stores the snapshot of models.
-snapshot_dir = "models/ResNet18/GTSDB/{}".format(job_name)
+snapshot_dir = "models/ResNet50/GTSDB/{}".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/ResNet18/GTSDB/{}".format(job_name)
+job_dir = "jobs/ResNet50/GTSDB/{}".format(job_name)
 # Directory which stores the detection results.
 output_result_dir = "{}/Documents/data/GTSDBdevkit/results/GTSDB/{}/Main".format(os.environ['HOME'], job_name)
 
@@ -262,10 +257,23 @@ snapshot_prefix = "{}/{}".format(snapshot_dir, model_name)
 # job script path.
 job_file = "{}/{}.sh".format(job_dir, model_name)
 
+# Find most recent snapshot.
+max_iter = 0
+for file in os.listdir(snapshot_dir):
+  if file.endswith(".caffemodel"):
+    basename = os.path.splitext(file)[0]
+    iter = int(basename.split("{}_iter_".format(model_name))[1])
+    if iter > max_iter:
+      max_iter = iter
+
+if max_iter == 0:
+  print("Cannot find snapshot in {}".format(snapshot_dir))
+  sys.exit()
+
 # Stores the test image names and sizes. Created by data/GTSDB/create_list.sh
 name_size_file = "data/GTSDB/test_name_size.txt"
-# The pretrained model. We use ResNet18.
-pretrain_model = "models/ResNet18/resnet18.caffemodel"
+# The pretrained model. We use ResNet50.
+pretrain_model = "{}_iter_{}.caffemodel".format(snapshot_prefix, max_iter)
 # Stores LabelMapItem.
 label_map_file = "data/GTSDB/labelmap_GTSDB.prototxt"
 
@@ -304,14 +312,14 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# res3b1_relu ==> 38 x 38
-# res5b_relu ==> 19 x 19
+# res3b3_relu ==> 38 x 38
+# res5c_relu ==> 19 x 19
 # ssd1_2 ==> 10 x 10
 # ssd2_2 ==> 5 x 5
 # ssd3_2 ==> 3 x 3
 # ssd4_2 ==> 1 x 1
 
-mbox_source_layers = ['res3b1_relu', 'res5b_relu', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
+mbox_source_layers = ['res3b3_relu', 'res5c_relu', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 # in percent %
 min_ratio = 20
 max_ratio = 95
@@ -344,7 +352,7 @@ gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
 # Divide the mini-batch to different GPUs.
-batch_size = 2
+batch_size = 1
 accum_batch_size = 2
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
@@ -394,7 +402,7 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 #     'test_interval': 1000,
 #     'eval_type': "detection",
 #     'ap_version': "MaxIntegral",
-#     'test_initialization': False,
+#     'test_initialization': True,
 #     # 'show_per_class_result': True,
 #     }
 
@@ -407,8 +415,8 @@ solver_param = {
     'gamma': 0.1,
     'momentum': 0.9,
     'iter_size': iter_size,
-    'max_iter': 80000,
-    'snapshot': 40000,
+    'max_iter': 0,
+    'snapshot': 0,
     'display': 10,
     'average_loss': 10,
     'type': "SGD",
@@ -421,7 +429,7 @@ solver_param = {
     'test_interval': 2000,
     'eval_type': "detection",
     'ap_version': "MaxIntegral",
-    'test_initialization': False,
+    'test_initialization': True,
     # 'show_per_class_result': True,
     }
 
@@ -469,7 +477,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
+ResNet50Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
 # with open('net2.prototxt', 'w') as f:
 #     print(net.to_proto(), file=f)
 # exit(0)
@@ -500,7 +508,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
+ResNet50Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
 
 AddExtraLayers(net, use_batchnorm=True)
 
@@ -562,42 +570,14 @@ with open(solver_file, 'w') as f:
     print(solver, file=f)
 shutil.copy(solver_file, job_dir)
 
-max_iter = 0
-# Find most recent snapshot.
-for file in os.listdir(snapshot_dir):
-  if file.endswith(".solverstate"):
-    basename = os.path.splitext(file)[0]
-    iter = int(basename.split("{}_iter_".format(model_name))[1])
-    if iter > max_iter:
-      max_iter = iter
-
-train_src_param = '--weights="{}" \\\n'.format(pretrain_model)
-if resume_training:
-  if max_iter > 0:
-    train_src_param = '--snapshot="{}_iter_{}.solverstate" \\\n'.format(snapshot_prefix, max_iter)
-
-if remove_old_models:
-  # Remove any snapshots smaller than max_iter.
-  for file in os.listdir(snapshot_dir):
-    if file.endswith(".solverstate"):
-      basename = os.path.splitext(file)[0]
-      iter = int(basename.split("{}_iter_".format(model_name))[1])
-      if max_iter > iter:
-        os.remove("{}/{}".format(snapshot_dir, file))
-    if file.endswith(".caffemodel"):
-      basename = os.path.splitext(file)[0]
-      iter = int(basename.split("{}_iter_".format(model_name))[1])
-      if max_iter > iter:
-        os.remove("{}/{}".format(snapshot_dir, file))
-
 # Create job file.
 with open(job_file, 'w') as f:
   f.write('cd {}\n'.format(caffe_root))
   f.write('./build/tools/caffe train \\\n')
   f.write('--solver="{}" \\\n'.format(solver_file))
-  f.write(train_src_param)
+  f.write('--weights="{}" \\\n'.format(pretrain_model))
   if solver_param['solver_mode'] == P.Solver.GPU:
-    f.write('--gpu {} 2>&1 | tee {}/{}.log\n'.format(gpus, job_dir, model_name))
+    f.write('--gpu {} 2>&1 | tee {}/{}_test{}.log\n'.format(gpus, job_dir, model_name, max_iter))
   else:
     f.write('2>&1 | tee {}/{}.log\n'.format(job_dir, model_name))
 

@@ -231,7 +231,7 @@ if use_batchnorm:
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
     # base_lr = 1e-6
-    base_lr = 2e-5
+    base_lr = 1e-5
 
 nms_top_k = 100
 top_k = 40
@@ -241,14 +241,14 @@ alpha = 1
 # Modify the job name if you want.
 job_name = "SSD_{}_{}_{}_{}_{}".format(resize, nms_top_k, top_k, "Square" if square else "Non-square", alpha)
 # The name of the model. Modify it if you want.
-model_name = "ResNet18_GTSDB_{}".format(job_name)
+model_name = "SqueezeNet11_GTSDB_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/ResNet18/GTSDB/{}".format(job_name)
+save_dir = "models/SqueezeNet11/GTSDB/{}".format(job_name)
 # Directory which stores the snapshot of models.
-snapshot_dir = "models/ResNet18/GTSDB/{}".format(job_name)
+snapshot_dir = "models/SqueezeNet11/GTSDB/{}".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/ResNet18/GTSDB/{}".format(job_name)
+job_dir = "jobs/SqueezeNet11/GTSDB/{}".format(job_name)
 # Directory which stores the detection results.
 output_result_dir = "{}/Documents/data/GTSDBdevkit/results/GTSDB/{}/Main".format(os.environ['HOME'], job_name)
 
@@ -264,8 +264,8 @@ job_file = "{}/{}.sh".format(job_dir, model_name)
 
 # Stores the test image names and sizes. Created by data/GTSDB/create_list.sh
 name_size_file = "data/GTSDB/test_name_size.txt"
-# The pretrained model. We use ResNet18.
-pretrain_model = "models/ResNet18/resnet18.caffemodel"
+# The pretrained model. We use SqueezeNet-v1.1.
+pretrain_model = "models/SqueezeNet11/squeezenet_v11.caffemodel"
 # Stores LabelMapItem.
 label_map_file = "data/GTSDB/labelmap_GTSDB.prototxt"
 
@@ -311,7 +311,7 @@ min_dim = 300
 # ssd3_2 ==> 3 x 3
 # ssd4_2 ==> 1 x 1
 
-mbox_source_layers = ['res3b1_relu', 'res5b_relu', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
+mbox_source_layers = ['fire4/concat', 'fire6/concat', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 # in percent %
 min_ratio = 20
 max_ratio = 95
@@ -344,8 +344,8 @@ gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
 # Divide the mini-batch to different GPUs.
-batch_size = 2
-accum_batch_size = 2
+batch_size = 16
+accum_batch_size = 16
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
 device_id = 0
@@ -469,7 +469,7 @@ net.data, net.label = CreateAnnotatedDataLayer(train_data, batch_size=batch_size
         train=True, output_label=True, label_map_file=label_map_file,
         transform_param=train_transform_param, batch_sampler=batch_sampler)
 
-ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
+SqueezeNetV11Body(net, from_layer='data')
 # with open('net2.prototxt', 'w') as f:
 #     print(net.to_proto(), file=f)
 # exit(0)
@@ -500,7 +500,7 @@ net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_
         train=False, output_label=True, label_map_file=label_map_file,
         transform_param=test_transform_param)
 
-ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
+SqueezeNetV11Body(net, from_layer='data')
 
 AddExtraLayers(net, use_batchnorm=True)
 

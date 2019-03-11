@@ -288,6 +288,32 @@ def Bottleneck(net, stride, expand_output_num, linear_output_num, layer_index, c
     branch2 = net.keys()[-1]
     net['block_{}'.format(layer_index)] = L.Eltwise(net[branch1], net[branch2])
 
+def FireModule(net, from_layer, num_fire, squeeze_depth, expand_depth):
+  prefix = 'fire{}/'.format(num_fire)
+  use_scale = False
+
+  conv_postfix = 'squeeze1x1'
+  ConvBNLayer(net, from_layer, '', use_bn=False, use_relu=True,
+      num_output=squeeze_depth, kernel_size=1, pad=0, stride=1, use_scale=use_scale,
+      conv_prefix=prefix, conv_postfix=conv_postfix)
+  squeeze = '{}{}'.format(prefix, conv_postfix)
+
+  conv_postfix = 'expand1x1'
+  ConvBNLayer(net, squeeze, '', use_bn=False, use_relu=True,
+      num_output=expand_depth, kernel_size=1, pad=0, stride=1, use_scale=use_scale,
+      conv_prefix=prefix, conv_postfix=conv_postfix)
+  expand1x1 = '{}{}'.format(prefix, conv_postfix)
+
+  conv_postfix = 'expand3x3'
+  ConvBNLayer(net, squeeze, '', use_bn=False, use_relu=True,
+      num_output=expand_depth, kernel_size=3, pad=1, stride=1, use_scale=use_scale,
+      conv_prefix=prefix, conv_postfix=conv_postfix)
+  expand3x3 = '{}{}'.format(prefix, conv_postfix)
+
+  fire_name = 'fire{}/concat'.format(num_fire)
+  branches = [net[expand1x1], net[expand3x3]]
+  net[fire_name] = L.Concat(*branches, axis=1)
+
 def InceptionTower(net, from_layer, tower_name, layer_params, **bn_param):
   use_scale = False
   for param in layer_params:
@@ -810,7 +836,9 @@ def ResNet50Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn
     bn_postfix = ''
     scale_prefix = 'scale_'
     scale_postfix = ''
-    ConvBNLayer(net, from_layer, 'conv1', use_bn=True, use_relu=True,
+
+
+    ConvBNLayer(net, from_layer, 'conv1', use_bn=False, use_relu=True,
         num_output=64, kernel_size=7, pad=3, stride=2,
         conv_prefix=conv_prefix, conv_postfix=conv_postfix,
         bn_prefix=bn_prefix, bn_postfix=bn_postfix,
@@ -952,6 +980,74 @@ def ResNet152Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **b
       net.pool5 = L.Pooling(net.res5c, pool=P.Pooling.AVE, global_pooling=True)
 
     return net
+
+def SqueezeNetV10Body(net, from_layer, output_pred=False):
+  assert from_layer in net.keys()
+
+  # conv1
+  net['conv1'] = L.Convolution(net[from_layer], num_output=96, pad=0, kernel_size=7, stride=2)
+  net['relu_conv1'] = L.ReLU(net['conv1'], in_place=True)
+
+  # maxpool1
+  net['pool1'] = L.Pooling(net['relu_conv1'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 2-4
+  FireModule(net, 'pool1', 2, 16, 64)
+  FireModule(net, 'fire2/concat', 3, 16, 64)
+  FireModule(net, 'fire3/concat', 4, 32, 128)
+  net['pool4'] = L.Pooling(net['fire4/concat'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 5-8
+  FireModule(net, 'pool4', 5, 32, 128)
+  FireModule(net, 'fire5/concat', 6, 48, 192)
+  FireModule(net, 'fire6/concat', 7, 48, 192)
+  FireModule(net, 'fire7/concat', 8, 64, 256)
+  net['pool8'] = L.Pooling(net['fire8/concat'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 9
+  FireModule(net, 'pool8', 9, 64, 256)
+  net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
+
+  if output_pred:
+    net['conv10'] = L.Convolution(net['dropout9'], num_output=1000, pad=0, kernel_size=1, stride=1)
+    net['relu_conv10'] = L.ReLU(net['conv10'], in_place=True)
+    net['pool10'] = L.Pooling(net['relu_conv10'], pool=P.Pooling.AVE, global_pooling=True)
+
+  return net
+
+def SqueezeNetV11Body(net, from_layer, output_pred=False):
+  assert from_layer in net.keys()
+
+  # conv1
+  net['conv1'] = L.Convolution(net[from_layer], num_output=64, pad=0, kernel_size=3, stride=2)
+  net['relu_conv1'] = L.ReLU(net['conv1'], in_place=True)
+
+  # maxpool1
+  net['pool1'] = L.Pooling(net['relu_conv1'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 2 & 3
+  FireModule(net, 'pool1', 2, 16, 64)
+  FireModule(net, 'fire2/concat', 3, 16, 64)
+  net['pool3'] = L.Pooling(net['fire3/concat'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 4 & 5
+  FireModule(net, 'pool3', 4, 32, 128)
+  FireModule(net, 'fire4/concat', 5, 32, 128)
+  net['pool5'] = L.Pooling(net['fire5/concat'], pool=P.Pooling.MAX, kernel_size=3, stride=2)
+
+  # fire 6-9
+  FireModule(net, 'pool5', 6, 48, 192)
+  FireModule(net, 'fire6/concat', 7, 48, 192)
+  FireModule(net, 'fire7/concat', 8, 64, 256)
+  FireModule(net, 'fire8/concat', 9, 64, 256)
+  net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
+
+  if output_pred:
+    net['conv10'] = L.Convolution(net['dropout9'], num_output=1000, pad=0, kernel_size=1, stride=1)
+    net['relu_conv10'] = L.ReLU(net['conv10'], in_place=True)
+    net['pool10'] = L.Pooling(net['relu_conv10'], pool=P.Pooling.AVE, global_pooling=True)
+
+  return net
 
 def InceptionV3Body(net, from_layer, output_pred=False, **bn_param):
   # scale is fixed to 1, thus we ignore it.

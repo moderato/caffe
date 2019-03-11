@@ -13,36 +13,57 @@ from caffe.model_libs import *
 import google.protobuf as pb
 from google.protobuf import text_format
 
-# Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
-def AddExtraLayers(net, use_batchnorm=True):
+# Add extra layers on top of a "base" network (e.g. VGGNet or Inception or MobileNet).
+def AddExtraLayers(net, use_batchnorm=True, lr_mult=1):
     use_relu = True
 
     # Add additional convolutional layers.
     # 19 x 19
-    last_layer = net.keys()[-1]
+    from_layer = net.keys()[-1]
 
+    # TODO(weiliu89): Construct the name using the last layer to avoid duplication.
     # 10 x 10
-    from_layer = last_layer
-    out_layer = "{}/conv1_1".format(last_layer)
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1)
+    out_layer = "ssd1_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1,
+        lr_mult=lr_mult)
+
     from_layer = out_layer
+    out_layer = "ssd1_2"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2,
+        lr_mult=lr_mult)
 
-    out_layer = "{}/conv1_2".format(last_layer)
-    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2)
+    # 5 x 5
     from_layer = out_layer
+    out_layer = "ssd2_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
+      lr_mult=lr_mult)
 
-    for i in range(2, 4):
-      out_layer = "{}/conv{}_1".format(last_layer, i)
-      ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 1, 0, 1)
-      from_layer = out_layer
+    from_layer = out_layer
+    out_layer = "ssd2_2"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
+      lr_mult=lr_mult)
 
-      out_layer = "{}/conv{}_2".format(last_layer, i)
-      ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 512, 3, 1, 2)
-      from_layer = out_layer
+    # 3 x 3
+    from_layer = out_layer
+    out_layer = "ssd3_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
+      lr_mult=lr_mult)
 
-    # Add global pooling layer.
-    name = net.keys()[-1]
-    net.pool6 = L.Pooling(net[name], pool=P.Pooling.AVE, global_pooling=True)
+    from_layer = out_layer
+    out_layer = "ssd3_2"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
+      lr_mult=lr_mult)
+
+    # 1 x 1
+    from_layer = out_layer
+    out_layer = "ssd4_1"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 128, 1, 0, 1,
+      lr_mult=lr_mult)
+
+    from_layer = out_layer
+    out_layer = "ssd4_2"
+    ConvBNLayer(net, from_layer, out_layer, use_batchnorm, use_relu, 256, 3, 1, 2,
+      lr_mult=lr_mult)
 
     return net
 
@@ -205,7 +226,7 @@ if use_batchnorm:
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
     # base_lr = 1e-6
-    base_lr = 4e-5
+    base_lr = 2e-5
 
 nms_top_k = 100
 top_k = 40
@@ -252,7 +273,7 @@ if max_iter == 0:
 # Stores the test image names and sizes. Created by data/GTSDB/create_list.sh
 name_size_file = "data/GTSDB/test_name_size.txt"
 # The pretrained model. We use ResNet18.
-pretrain_model = "models/ResNet18/resnet18.caffemodel"
+pretrain_model = "{}_iter_{}.caffemodel".format(snapshot_prefix, max_iter)
 # Stores LabelMapItem.
 label_map_file = "data/GTSDB/labelmap_GTSDB.prototxt"
 
@@ -291,14 +312,14 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# res3b3_relu ==> 38 x 38
-# res5c_relu ==> 19 x 19
-# res5c_relu/conv1_2 ==> 10 x 10
-# res5c_relu/conv2_2 ==> 5 x 5
-# res5c_relu/conv3_2 ==> 3 x 3
-# pool6 ==> 1 x 1
+# res3b1_relu ==> 38 x 38
+# res5b_relu ==> 19 x 19
+# ssd1_2 ==> 10 x 10
+# ssd2_2 ==> 5 x 5
+# ssd3_2 ==> 3 x 3
+# ssd4_2 ==> 1 x 1
 
-mbox_source_layers = ['res3b1_relu', 'res5b_relu', 'res5b_relu/conv1_2', 'res5b_relu/conv2_2', 'res5b_relu/conv3_2', 'pool6']
+mbox_source_layers = ['res3b1_relu', 'res5b_relu', 'ssd1_2', 'ssd2_2', 'ssd3_2', 'ssd4_2']
 # in percent %
 min_ratio = 20
 max_ratio = 95
@@ -308,12 +329,13 @@ max_sizes = []
 for ratio in range(min_ratio, max_ratio + 1, step):
   min_sizes.append(min_dim * ratio / 100.)
   max_sizes.append(min_dim * (ratio + step) / 100.)
-min_sizes = [min_dim * 10 / 100.] + min_sizes
-max_sizes = [[]] + max_sizes
+min_sizes = [min_dim * 5 / 100.] + min_sizes # 10
+max_sizes = [min_dim * 10 / 100.] + max_sizes # 20
 if square:
     aspect_ratios = [[]] * 6
 else:
     aspect_ratios = [[2], [2, 3], [2, 3], [2, 3], [2], [2]]
+steps = [8, 16, 32, 64, 100, 300]
 
 # variance used to encode/decode prior bboxes.
 if code_type == P.PriorBox.CENTER_SIZE:
@@ -377,10 +399,10 @@ test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 #     'snapshot_after_train': True,
 #     # Test parameters
 #     'test_iter': [test_iter],
-#     'test_interval': 2000,
+#     'test_interval': 1000,
 #     'eval_type': "detection",
 #     'ap_version': "MaxIntegral",
-#     'test_initialization': False,
+#     'test_initialization': True,
 #     # 'show_per_class_result': True,
 #     }
 
@@ -407,7 +429,7 @@ solver_param = {
     'test_interval': 2000,
     'eval_type': "detection",
     'ap_version': "MaxIntegral",
-    'test_initialization': False,
+    'test_initialization': True,
     # 'show_per_class_result': True,
     }
 
@@ -464,8 +486,8 @@ AddExtraLayers(net, use_batchnorm=True)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
         use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
-        aspect_ratios=aspect_ratios, num_classes=num_classes, 
-        share_location=share_location, flip=flip, clip=clip,
+        aspect_ratios=aspect_ratios, steps=steps,
+        num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1)
 
 # Create the MultiBoxLossLayer.
@@ -491,9 +513,9 @@ ResNet18Body(net, from_layer='data', use_pool5=False, use_dilation_conv5=True)
 AddExtraLayers(net, use_batchnorm=True)
 
 mbox_layers = CreateMultiBoxHead(net, data_layer='data', from_layers=mbox_source_layers,
-        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes, 
-        aspect_ratios=aspect_ratios, num_classes=num_classes, 
-        share_location=share_location, flip=flip, clip=clip,
+        use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+        aspect_ratios=aspect_ratios, steps=steps,
+        num_classes=num_classes, share_location=share_location, flip=flip, clip=clip,
         prior_variance=prior_variance, kernel_size=3, pad=1)
 
 conf_name = "mbox_conf"
