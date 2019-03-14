@@ -76,7 +76,7 @@ caffe_root = os.getcwd()
 run_soon = True
 # Set true if you want to load from most recently saved snapshot.
 # Otherwise, we will load from the pretrain_model defined below.
-resume_training = True
+resume_training = False
 # If true, Remove old model files.
 remove_old_models = True
 
@@ -230,8 +230,8 @@ if use_batchnorm:
     base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    # base_lr = 1e-6
-    base_lr = 1e-5
+    # base_lr = 5e-6
+    base_lr = 2e-5
 
 nms_top_k = 100
 top_k = 40
@@ -372,58 +372,58 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
-# solver_param = {
-#     # Train parameters
-#     'base_lr': base_lr,
-#     'weight_decay': 0.0005,
-#     'lr_policy': "multistep",
-#     'stepvalue': [20000, 40000, 60000],
-#     'gamma': 0.5,
-#     'iter_size': iter_size,
-#     'max_iter': 80000,
-#     'snapshot': 50000,
-#     'display': 10,
-#     'average_loss': 10,
-#     'type': "RMSProp",
-#     'solver_mode': solver_mode,
-#     'device_id': device_id,
-#     'debug_info': False,
-#     'snapshot_after_train': True,
-#     # Test parameters
-#     'test_iter': [test_iter],
-#     'test_interval': 1000,
-#     'eval_type': "detection",
-#     'ap_version': "MaxIntegral",
-#     'test_initialization': False,
-#     # 'show_per_class_result': True,
-#     }
-
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
     'weight_decay': 0.0005,
     'lr_policy': "multistep",
-    'stepvalue': [80000, 120000],
-    'gamma': 0.1,
-    'momentum': 0.9,
+    'stepvalue': [20000, 50000],
+    'gamma': 0.5,
     'iter_size': iter_size,
-    'max_iter': 160000,
+    'max_iter': 80000,
     'snapshot': 40000,
     'display': 10,
     'average_loss': 10,
-    'type': "SGD",
+    'type': "RMSProp",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
     'snapshot_after_train': True,
     # Test parameters
     'test_iter': [test_iter],
-    'test_interval': 2000,
+    'test_interval': 1000,
     'eval_type': "detection",
     'ap_version': "MaxIntegral",
     'test_initialization': False,
     # 'show_per_class_result': True,
     }
+
+# solver_param = {
+#     # Train parameters
+#     'base_lr': base_lr,
+#     'weight_decay': 0.0005,
+#     'lr_policy': "multistep",
+#     'stepvalue': [20000, 90000],
+#     'gamma': 0.1,
+#     'momentum': 0.9,
+#     'iter_size': iter_size,
+#     'max_iter': 140000,
+#     'snapshot': 40000,
+#     'display': 10,
+#     'average_loss': 10,
+#     'type': "SGD",
+#     'solver_mode': solver_mode,
+#     'device_id': device_id,
+#     'debug_info': False,
+#     'snapshot_after_train': True,
+#     # Test parameters
+#     'test_iter': [test_iter],
+#     'test_interval': 2000,
+#     'eval_type': "detection",
+#     'ap_version': "MaxIntegral",
+#     'test_initialization': False,
+#     # 'show_per_class_result': True,
+#     }
 
 # parameters for generating detection output.
 det_out_param = {

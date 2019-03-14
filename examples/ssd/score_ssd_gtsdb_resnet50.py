@@ -225,7 +225,7 @@ if use_batchnorm:
     base_lr = 4e-5
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    # base_lr = 1e-6
+    # base_lr = 5e-6
     base_lr = 2e-5
 
 nms_top_k = 100
@@ -312,8 +312,8 @@ loss_param = {
 # parameters for generating priors.
 # minimum dimension of input image
 min_dim = 300
-# res3b3_relu ==> 38 x 38
-# res5c_relu ==> 19 x 19
+# res3b1_relu ==> 38 x 38
+# res5b_relu ==> 19 x 19
 # ssd1_2 ==> 10 x 10
 # ssd2_2 ==> 5 x 5
 # ssd3_2 ==> 3 x 3
@@ -352,7 +352,7 @@ gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
 # Divide the mini-batch to different GPUs.
-batch_size = 1
+batch_size = 2
 accum_batch_size = 2
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
@@ -380,58 +380,58 @@ test_batch_size = 1
 # otherwise mAP will be slightly off the true value.
 test_iter = int(math.ceil(float(num_test_image) / test_batch_size))
 
-# solver_param = {
-#     # Train parameters
-#     'base_lr': base_lr,
-#     'weight_decay': 0.0005,
-#     'lr_policy': "multistep",
-#     'stepvalue': [20000, 40000, 60000],
-#     'gamma': 0.5,
-#     'iter_size': iter_size,
-#     'max_iter': 80000,
-#     'snapshot': 50000,
-#     'display': 10,
-#     'average_loss': 10,
-#     'type': "RMSProp",
-#     'solver_mode': solver_mode,
-#     'device_id': device_id,
-#     'debug_info': False,
-#     'snapshot_after_train': True,
-#     # Test parameters
-#     'test_iter': [test_iter],
-#     'test_interval': 1000,
-#     'eval_type': "detection",
-#     'ap_version': "MaxIntegral",
-#     'test_initialization': True,
-#     # 'show_per_class_result': True,
-#     }
-
 solver_param = {
     # Train parameters
     'base_lr': base_lr,
     'weight_decay': 0.0005,
     'lr_policy': "multistep",
-    'stepvalue': [40000, 60000],
-    'gamma': 0.1,
-    'momentum': 0.9,
+    'stepvalue': [20000, 50000],
+    'gamma': 0.5,
     'iter_size': iter_size,
     'max_iter': 0,
     'snapshot': 0,
     'display': 10,
     'average_loss': 10,
-    'type': "SGD",
+    'type': "RMSProp",
     'solver_mode': solver_mode,
     'device_id': device_id,
     'debug_info': False,
     'snapshot_after_train': True,
     # Test parameters
     'test_iter': [test_iter],
-    'test_interval': 2000,
+    'test_interval': 1000,
     'eval_type': "detection",
     'ap_version': "MaxIntegral",
     'test_initialization': True,
     # 'show_per_class_result': True,
     }
+
+# solver_param = {
+#     # Train parameters
+#     'base_lr': base_lr,
+#     'weight_decay': 0.0005,
+#     'lr_policy': "multistep",
+#     'stepvalue': [20000, 90000],
+#     'gamma': 0.1,
+#     'momentum': 0.9,
+#     'iter_size': iter_size,
+#     'max_iter': 0,
+#     'snapshot': 0,
+#     'display': 10,
+#     'average_loss': 10,
+#     'type': "SGD",
+#     'solver_mode': solver_mode,
+#     'device_id': device_id,
+#     'debug_info': False,
+#     'snapshot_after_train': True,
+#     # Test parameters
+#     'test_iter': [test_iter],
+#     'test_interval': 2000,
+#     'eval_type': "detection",
+#     'ap_version': "MaxIntegral",
+#     'test_initialization': True,
+#     # 'show_per_class_result': True,
+#     }
 
 # parameters for generating detection output.
 det_out_param = {

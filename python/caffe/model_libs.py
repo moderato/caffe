@@ -837,7 +837,6 @@ def ResNet50Body(net, from_layer, use_pool5=True, use_dilation_conv5=False, **bn
     scale_prefix = 'scale_'
     scale_postfix = ''
 
-
     ConvBNLayer(net, from_layer, 'conv1', use_bn=False, use_relu=True,
         num_output=64, kernel_size=7, pad=3, stride=2,
         conv_prefix=conv_prefix, conv_postfix=conv_postfix,
@@ -1006,9 +1005,9 @@ def SqueezeNetV10Body(net, from_layer, output_pred=False):
 
   # fire 9
   FireModule(net, 'pool8', 9, 64, 256)
-  net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
 
   if output_pred:
+    net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
     net['conv10'] = L.Convolution(net['dropout9'], num_output=1000, pad=0, kernel_size=1, stride=1)
     net['relu_conv10'] = L.ReLU(net['conv10'], in_place=True)
     net['pool10'] = L.Pooling(net['relu_conv10'], pool=P.Pooling.AVE, global_pooling=True)
@@ -1040,9 +1039,9 @@ def SqueezeNetV11Body(net, from_layer, output_pred=False):
   FireModule(net, 'fire6/concat', 7, 48, 192)
   FireModule(net, 'fire7/concat', 8, 64, 256)
   FireModule(net, 'fire8/concat', 9, 64, 256)
-  net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
 
   if output_pred:
+    net['dropout9'] = L.Dropout(net['fire9/concat'], dropout_ratio=0.5, in_place=True)
     net['conv10'] = L.Convolution(net['dropout9'], num_output=1000, pad=0, kernel_size=1, stride=1)
     net['relu_conv10'] = L.ReLU(net['conv10'], in_place=True)
     net['pool10'] = L.Pooling(net['relu_conv10'], pool=P.Pooling.AVE, global_pooling=True)
